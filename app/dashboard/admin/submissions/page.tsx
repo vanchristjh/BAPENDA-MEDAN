@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
   FileText, Search, Loader2, X, AlertTriangle, 
-  CheckCircle2, Clock, Eye, Filter, ArrowUpRight, Check, XCircle
+  Clock, Eye, ArrowUpRight, Check, XCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -63,7 +63,7 @@ export default function AdminSubmissionsPage() {
       const res = await fetch("/api/submissions");
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setSubmissions(data.submissions || []);
+      setSubmissions(Array.isArray(data) ? data : (data.submissions ?? []));
     } catch {
       toast("Error", "Gagal memuat daftar pengajuan masuk.", "error");
     } finally {
@@ -254,7 +254,7 @@ export default function AdminSubmissionsPage() {
       {/* Verification Modal */}
       {selectedSub && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200 text-left">
+          <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200 text-left">
             
             {/* Header */}
             <div className="bg-zinc-50 px-8 py-6 border-b border-zinc-100 flex items-center justify-between">
@@ -275,7 +275,7 @@ export default function AdminSubmissionsPage() {
 
             <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto">
               {/* Submission Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50/50 p-6 border border-zinc-100 rounded-[2rem] text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50/50 p-6 border border-zinc-100 rounded-xl text-xs">
                 <div className="space-y-3">
                   <div>
                     <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider block">Nomor Tiket</span>

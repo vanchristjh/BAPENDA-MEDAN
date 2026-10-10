@@ -3,15 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   Search, CreditCard, Clock, CheckCircle,
-  QrCode, Building2, ChevronRight, Info
+  QrCode, Building2, Info
 } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 interface Payment {
   id: string;
@@ -129,7 +127,7 @@ export default function TagihanPajakPage() {
   if (step === "success") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] text-center p-8 animate-in zoom-in duration-500">
-        <div className="w-40 h-40 bg-emerald-50 rounded-[4rem] flex items-center justify-center mb-10 shadow-2xl shadow-emerald-500/10 border-4 border-white">
+        <div className="w-40 h-40 bg-emerald-50 rounded-3xl flex items-center justify-center mb-10 shadow-2xl shadow-emerald-500/10 border-4 border-white">
           <CheckCircle className="w-20 h-20 text-emerald-500" />
         </div>
         <h1 className="text-5xl font-black italic tracking-tighter uppercase italic text-foreground mb-4">Pembayaran Sukses!</h1>
@@ -138,9 +136,9 @@ export default function TagihanPajakPage() {
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
            <Link href="/dashboard/pajak/riwayat">
-             <Button variant="primary" className="btn-premium px-12 h-18 rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/30">Cetak E-Receipt</Button>
+             <Button variant="primary" className="btn-premium px-12 h-18 rounded-xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/30">Cetak E-Receipt</Button>
            </Link>
-           <Button variant="outline" onClick={() => setStep("list")} className="px-10 h-18 rounded-[2rem] bg-zinc-50 border-zinc-100 font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all">Kembali ke Tagihan</Button>
+           <Button variant="outline" onClick={() => setStep("list")} className="px-10 h-18 rounded-xl bg-zinc-50 border-zinc-100 font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all">Kembali ke Tagihan</Button>
         </div>
       </div>
     );
@@ -175,23 +173,23 @@ export default function TagihanPajakPage() {
              placeholder="Cari NOP Anda..."
              value={nopSearch}
              onChange={(e) => setNopSearch(e.target.value)}
-             className="w-full pl-14 pr-7 py-5 bg-white border border-zinc-100 rounded-[2rem] focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-xs uppercase tracking-widest shadow-sm group-hover:border-primary/20"
+             className="w-full pl-14 pr-7 py-5 bg-white border border-zinc-100 rounded-xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-xs uppercase tracking-widest shadow-sm group-hover:border-primary/20"
            />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-10">
         {loading ? (
-          [1, 2].map((i) => <div key={i} className="h-64 bg-zinc-50 border border-zinc-100 rounded-[4rem] animate-pulse" />)
+          [1, 2].map((i) => <div key={i} className="h-64 bg-zinc-50 border border-zinc-100 rounded-3xl animate-pulse" />)
         ) : filtered.length === 0 ? (
-          <div className="py-24 text-center bg-white border-2 border-dashed border-zinc-100 rounded-[5rem] group hover:border-primary/20 transition-all">
+          <div className="py-24 text-center bg-white border-2 border-dashed border-zinc-100 rounded-3xl group hover:border-primary/20 transition-all">
             <CreditCard className="w-20 h-20 mx-auto mb-8 text-zinc-200 group-hover:text-primary transition-all group-hover:scale-110 duration-500" />
             <h3 className="text-2xl font-black italic tracking-tighter uppercase italic mb-2 tracking-widest">Tidak Ada Tagihan Aktif.</h3>
             <p className="text-muted-foreground font-medium italic">Seluruh kewajiban pembayaran Anda saat ini telah terpenuhi.</p>
           </div>
         ) : (
           filtered.map((p) => (
-            <Card key={p.id} padding="none" variant="elevated" className="group bg-white border-zinc-100 dark:border-zinc-100 hover:border-primary/20 hover:scale-[1.01] transition-all duration-500 rounded-[4rem] overflow-hidden shadow-2xl shadow-primary/5 flex flex-col md:flex-row p-12 gap-12 relative">
+            <Card key={p.id} padding="none" variant="elevated" className="group bg-white border-zinc-100 dark:border-zinc-100 hover:border-primary/20 hover:scale-[1.01] transition-all duration-500 rounded-3xl overflow-hidden shadow-2xl shadow-primary/5 flex flex-col md:flex-row p-12 gap-12 relative">
                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] -z-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                
                <div className="flex-1 space-y-10 relative z-10 text-left">
@@ -213,7 +211,7 @@ export default function TagihanPajakPage() {
                     <p className="text-muted-foreground font-medium text-sm leading-relaxed max-w-md border-l-4 border-zinc-50 pl-8 ml-1">{p.taxObject.address}</p>
                   </div>
                   
-                  <div className="flex items-center gap-3 text-red-500/80 font-black text-[10px] uppercase tracking-widest bg-red-50 border border-red-100 w-fit px-5 py-3 rounded-[1.5rem] italic">
+                  <div className="flex items-center gap-3 text-red-500/80 font-black text-[10px] uppercase tracking-widest bg-red-50 border border-red-100 w-fit px-5 py-3 rounded-lg italic">
                     <Clock className="w-4 h-4 animate-pulse" /> Jatuh Tempo: {formatDate(p.expiredAt)}
                   </div>
                </div>
@@ -238,7 +236,7 @@ export default function TagihanPajakPage() {
                       loading={processing && selected?.id === p.id}
                       onClick={() => handleMockPay(p)}
                       variant="outline"
-                      className="w-full h-14 mt-4 rounded-[1.5rem] border-dashed border-amber-500 text-amber-600 hover:bg-amber-50/50 flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all"
+                      className="w-full h-14 mt-4 rounded-lg border-dashed border-amber-500 text-amber-600 hover:bg-amber-50/50 flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all"
                     >
                       Simulasi Bayar Instan (Bypass) <CheckCircle className="w-4 h-4" />
                     </Button>
@@ -249,8 +247,8 @@ export default function TagihanPajakPage() {
         )}
       </div>
 
-      <div className="bg-zinc-50 border border-zinc-100 p-10 rounded-[4rem] flex flex-col md:flex-row items-center gap-10">
-        <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center shadow-xl border border-zinc-100 shrink-0">
+      <div className="bg-zinc-50 border border-zinc-100 p-10 rounded-3xl flex flex-col md:flex-row items-center gap-10">
+        <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-xl border border-zinc-100 shrink-0">
           <Info className="w-10 h-10 text-primary" />
         </div>
         <div className="text-left">

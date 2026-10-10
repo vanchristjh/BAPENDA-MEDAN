@@ -10,26 +10,18 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const properties = await prisma.propertyMarket.findMany();
+    // Bounded + DB-side averages (was two full-table scans with JS reduce)
+    const [properties, marketAgg, njopAgg] = await Promise.all([
+      prisma.propertyMarket.findMany({ take: 500, orderBy: { createdAt: "desc" } }),
+      prisma.propertyMarket.aggregate({ _avg: { marketPrice: true } }),
+      prisma.taxObject.aggregate({ where: { type: "PBB-P2" }, _avg: { njop: true } }),
+    ]);
 
     // Average price and comparisons
-    const avgMarketPrice = properties.length > 0
-      ? properties.reduce((acc, curr) => acc + Number(curr.marketPrice), 0) / properties.length
-      : 0;
+    const avgMarketPrice = Number(marketAgg._avg.marketPrice ?? 0);
 
     // Let's get the average NJOP of PBB-P2 objects for comparison
-    const pbbObjects = await prisma.taxObject.findMany({
-      where: {
-        type: "PBB-P2"
-      },
-      select: {
-        njop: true
-      }
-    });
-
-    const avgNJOP = pbbObjects.length > 0
-      ? pbbObjects.reduce((acc, curr) => acc + Number(curr.njop || 0), 0) / pbbObjects.length
-      : 0;
+    const avgNJOP = Number(njopAgg._avg.njop ?? 0);
 
     const pctDiff = avgNJOP > 0 ? ((avgMarketPrice - avgNJOP) / avgNJOP) * 100 : 0;
 

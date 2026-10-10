@@ -4,19 +4,26 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const ResponseSchema = z.object({
+  response: z.string().min(5).max(5000),
+  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED", "REJECTED"]).optional(),
+});
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { response, status } = await req.json();
-    if (!response) {
-      return NextResponse.json({ error: "Respon tidak boleh kosong" }, { status: 400 });
+    const parsed = ResponseSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Respon tidak valid", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { response, status } = parsed.data;
 
     const oldVal = await prisma.complaint.findUnique({ where: { id: id } });
     const updated = await prisma.complaint.update({

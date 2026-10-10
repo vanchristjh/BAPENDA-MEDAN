@@ -3,8 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Search, Menu, User, Bell, ShieldCheck, Sparkles } from "lucide-react";
-import Image from "next/image";
+import { Search, Menu, User, Bell, ShieldCheck } from "lucide-react";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);

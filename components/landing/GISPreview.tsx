@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, ShieldCheck, Target, Users, Landmark, ArrowRight, Star, Activity } from "lucide-react";
+import { TrendingUp, ShieldCheck, Target, Landmark, ArrowRight, Activity } from "lucide-react";
 import { MapVisualization } from "./MapVisualization";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";

@@ -53,18 +53,13 @@ interface Stats {
   }>;
 }
 
+type SessionRole = { role?: string };
+
 export default function GeoPendataanPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      const role = (session?.user as any)?.role;
-      if (role !== "ADMIN" && role !== "OFFICER") {
-        router.replace("/dashboard");
-      }
-    }
-  }, [session, status, router]);
+  const userRole = (session?.user as SessionRole | undefined)?.role;
+  const isAuthorized = userRole === "ADMIN" || userRole === "OFFICER" || userRole === "DEVELOPER";
 
   const { toast } = useToast();
   const [objects, setObjects] = useState<TaxObject[]>([]);
@@ -80,13 +75,11 @@ export default function GeoPendataanPage() {
 
   const [icons, setIcons] = useState<Record<string, DivIcon>>({});
 
-  if (status === "loading" || ((session?.user as any)?.role !== "ADMIN" && (session?.user as any)?.role !== "OFFICER")) {
-     return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-           <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
-        </div>
-     );
-  }
+  useEffect(() => {
+    if (status === "authenticated" && !isAuthorized) {
+      router.replace("/dashboard");
+    }
+  }, [status, isAuthorized, router]);
 
   const loadData = () => {
     Promise.all([
@@ -105,6 +98,7 @@ export default function GeoPendataanPage() {
   };
 
   useEffect(() => {
+    if (status !== "authenticated" || !isAuthorized) return;
     import("leaflet").then((L) => {
       const greenIcon = L.divIcon({
         className: "premium-marker",
@@ -128,7 +122,7 @@ export default function GeoPendataanPage() {
     });
 
     loadData();
-  }, []);
+  }, [status, isAuthorized]);
 
   const selectObjectForSurvey = (obj: TaxObject) => {
     setSelectedObj(obj);
@@ -175,6 +169,14 @@ export default function GeoPendataanPage() {
   const pendingList = useMemo(() => {
     return objects.filter(o => o.status === "PENDING").slice(0, 5);
   }, [objects]);
+
+  if (status === "loading" || !isAuthorized) {
+     return (
+        <div className="min-h-[60vh] flex items-center justify-center">
+           <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
+        </div>
+     );
+  }
 
   if (loading) {
     return (

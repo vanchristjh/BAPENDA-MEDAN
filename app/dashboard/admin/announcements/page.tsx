@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { 
   Megaphone, Plus, Search, 
-  MoreVertical, Edit, Trash2, 
+  Edit, Trash2, 
   ToggleLeft, ToggleRight, 
   Calendar, User, AlertCircle, Loader2, X, ChevronDown
 } from "lucide-react";
@@ -26,7 +26,7 @@ export default function AnnouncementsAdminPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
+    if (status === "authenticated" && !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
       router.replace("/dashboard");
     }
   }, [session, status, router]);
@@ -47,7 +47,7 @@ export default function AnnouncementsAdminPage() {
   });
 
   const fetchAnnouncements = useCallback(async () => {
-    if (status !== "authenticated" || (session?.user as any)?.role !== "ADMIN") return;
+    if (status !== "authenticated" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) return;
     setLoading(true);
     try {
       const res = await fetch("/api/announcements");
@@ -65,7 +65,7 @@ export default function AnnouncementsAdminPage() {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
+  if (status === "loading" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
@@ -173,11 +173,11 @@ export default function AnnouncementsAdminPage() {
           placeholder="Cari Judul, Isi, atau Tag..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-16 pr-8 py-6 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-inner focus:bg-zinc-50 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest italic"
+          className="w-full pl-16 pr-8 py-6 bg-white border border-zinc-100 rounded-2xl outline-none shadow-inner focus:bg-zinc-50 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest italic"
         />
       </div>
 
-      <div className="bg-white rounded-[4rem] border border-zinc-100 shadow-2xl shadow-primary/5 overflow-hidden">
+      <div className="bg-white rounded-3xl border border-zinc-100 shadow-2xl shadow-primary/5 overflow-hidden">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full border-collapse">
             <thead>
@@ -247,7 +247,7 @@ export default function AnnouncementsAdminPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 text-left">
            <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowModal(false)} />
-           <div className="bg-white rounded-[4rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative z-10 p-12 lg:p-16">
+           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative z-10 p-12 lg:p-16">
               <div className="flex items-start justify-between mb-12">
                  <div className="space-y-4">
                     <div className="flex items-center gap-3 text-primary">
@@ -256,7 +256,7 @@ export default function AnnouncementsAdminPage() {
                     </div>
                     <h2 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase italic leading-none">{editingItem ? "Edit" : "Buat"} <span className="text-primary italic">Pengumuman.</span></h2>
                  </div>
-                 <button onClick={() => setShowModal(false)} className="p-5 bg-zinc-50 text-zinc-400 rounded-[2rem] hover:bg-zinc-100 transition-all shadow-inner"><X className="w-6 h-6" /></button>
+                 <button onClick={() => setShowModal(false)} className="p-5 bg-zinc-50 text-zinc-400 rounded-lg hover:bg-zinc-100 transition-all shadow-inner"><X className="w-6 h-6" /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-12">
@@ -266,7 +266,7 @@ export default function AnnouncementsAdminPage() {
                        <input 
                         required 
                         placeholder="Contoh: Pemutihan Pajak PBB 2026..." 
-                        className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                        className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                         value={form.title}
                         onChange={e => setForm({...form, title: e.target.value})}
                        />
@@ -275,7 +275,7 @@ export default function AnnouncementsAdminPage() {
                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Kategori Konten</label>
                        <div className="relative">
                           <select 
-                           className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner appearance-none cursor-pointer"
+                           className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner appearance-none cursor-pointer"
                            value={form.category}
                            onChange={e => setForm({...form, category: e.target.value})}
                           >
@@ -296,7 +296,7 @@ export default function AnnouncementsAdminPage() {
                       required
                       placeholder="Masukkan detail instruksi atau informasi di sini..." 
                       rows={8}
-                      className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
+                      className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
                       value={form.content}
                       onChange={e => setForm({...form, content: e.target.value})}
                     />
@@ -335,7 +335,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
   };
 
   return (
-    <div className="bg-white p-10 rounded-[3.5rem] border border-zinc-50 shadow-xl shadow-primary/[0.02] flex items-center justify-between group hover:scale-[1.02] transition-all">
+    <div className="bg-white p-10 rounded-3xl border border-zinc-50 shadow-xl shadow-primary/[0.02] flex items-center justify-between group hover:scale-[1.02] transition-all">
        <div className="space-y-2 text-left">
           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic">{label}</p>
           <p className="text-4xl font-black italic tracking-tighter text-foreground italic">{value}</p>

@@ -202,7 +202,7 @@ export default function AdminPaymentsPage() {
       {/* Detail Modal */}
       {selectedPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-6 animate-in fade-in duration-300 text-left">
-          <Card padding="none" className="bg-white rounded-[3rem] shadow-2xl w-full max-w-lg border border-zinc-100 animate-in zoom-in-95 duration-300 relative p-8">
+          <Card padding="none" className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-zinc-100 animate-in zoom-in-95 duration-300 relative p-8">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <span className="text-[10px] font-black uppercase text-zinc-400">Rincian Transaksi</span>

@@ -3,6 +3,15 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
+import { z } from "zod";
+
+const SubmissionPatchSchema = z.object({
+  status: z.enum(["PENDING", "IN_PROGRESS", "APPROVED", "REJECTED"]).optional(),
+  reviewNotes: z.string().max(2000).optional(),
+  title: z.string().min(5).max(200).optional(),
+  description: z.string().min(20).max(5000).optional(),
+  documentUrl: z.string().max(500).optional(),
+});
 
 export async function GET(
   req: NextRequest,
@@ -36,7 +45,7 @@ export async function GET(
     }
 
     // Role-based check: Users can only see their own submissions
-    if (session.user.role === "USER" && submission.userId !== session.user.id) {
+    if (["USER", "MAHASISWA"].includes(session.user.role) && submission.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -58,7 +67,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { status, reviewNotes, title, description, documentUrl } = await req.json();
+    const parsed = SubmissionPatchSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { status, reviewNotes, title, description, documentUrl } = parsed.data;
 
     const submission = await prisma.taxSubmission.findUnique({
       where: { id },
@@ -71,7 +84,7 @@ export async function PATCH(
     const oldData = { ...submission };
 
     // If regular USER
-    if (session.user.role === "USER") {
+    if (["USER", "MAHASISWA"].includes(session.user.role)) {
       if (submission.userId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -102,12 +115,12 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
-    // For ADMIN / OFFICER (Reviewer)
-    if (!["ADMIN", "OFFICER"].includes(session.user.role)) {
+    // For ADMIN / OFFICER / DEVELOPER (Reviewer)
+    if (!["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updatedData: any = {};
+    const updatedData: Record<string, unknown> = {};
     if (status !== undefined) updatedData.status = status;
     if (reviewNotes !== undefined) updatedData.reviewNotes = reviewNotes;
 
@@ -129,7 +142,7 @@ export async function PATCH(
     // Notify user if status changed
     if (status && status !== oldData.status) {
       let statusLabel = "";
-      let typeLabel = status === "APPROVED" ? "SUCCESS" : status === "REJECTED" ? "ERROR" : "INFO";
+      const typeLabel = status === "APPROVED" ? "SUCCESS" : status === "REJECTED" ? "ERROR" : "INFO";
       
       switch (status) {
         case "IN_PROGRESS":
@@ -181,7 +194,7 @@ export async function DELETE(
     }
 
     // Authorize: Only admin/officer or the owner of the submission can delete
-    if (session.user.role === "USER") {
+    if (["USER", "MAHASISWA"].includes(session.user.role)) {
       if (submission.userId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }

@@ -3,18 +3,27 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Shield, Phone, MapPin, Key, Loader2, Save, CheckCircle2, AlertTriangle, Eye, EyeOff, FileText, Building } from "lucide-react";
+import { User, Mail, Shield, Key, Loader2, Save, Eye, EyeOff, FileText, Building } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+
+interface Profile {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  role?: string;
+  nik?: string | null;
+  institution?: string | null;
+}
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -61,7 +70,7 @@ export default function ProfilePage() {
       });
       if (!res.ok) throw new Error("Failed to update profile");
       toast("Berhasil", "Profil berhasil diperbarui", "success");
-    } catch (err) {
+    } catch {
       toast("Gagal", "Gagal memperbarui profil", "error");
     } finally {
       setSaving(false);
@@ -93,8 +102,8 @@ export default function ProfilePage() {
       }
       toast("Berhasil", "Password berhasil diubah", "success");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err: any) {
-      toast("Gagal", err.message, "error");
+    } catch (err: unknown) {
+      toast("Gagal", err instanceof Error ? err.message : "Gagal mengubah password", "error");
     } finally {
       setChangingPassword(false);
     }
@@ -119,7 +128,7 @@ export default function ProfilePage() {
     );
   }
 
-  const user = profile || session?.user;
+  const user = (profile ?? session?.user ?? {}) as Profile;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -131,7 +140,7 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight">{user?.name || "Pengguna"}</h1>
           <div className="flex items-center gap-3 mt-2">
-            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${roleBadge(user?.role)}`}>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${roleBadge(user.role ?? "")}`}>
               {user?.role}
             </span>
             <span className="text-sm text-zinc-500">{user?.email}</span>

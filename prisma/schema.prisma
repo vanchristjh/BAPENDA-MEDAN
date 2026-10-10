@@ -52,6 +52,10 @@ model User {
   assessments      TaxAssessment[]
   chatMessages     ChatMessage[]
   chatSessions     ChatSession[]
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 // ... existing models ...
@@ -129,6 +133,11 @@ model TaxObject {
   sppts       Sppt[]
   locations   ObjectTaxLocation?
   assessments TaxAssessment[]
+
+  @@index([ownerId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -148,6 +157,11 @@ model Payment {
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([taxObjectId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── Content Management System (CMS) ───────────────────────────────────────
@@ -192,6 +206,10 @@ model AuditLog {
   newValue  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([table, recordId])
+  @@index([createdAt])
 }
 
 // ─── Pengajuan Riset Mahasiswa ────────────────────────────────────────────────
@@ -214,6 +232,10 @@ model ResearchRequest {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── Permohonan Informasi Publik (PPID) ──────────────────────────────────────
@@ -232,6 +254,10 @@ model PPIDRequest {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── Pengaduan Masyarakat ─────────────────────────────────────────────────────
@@ -251,6 +277,10 @@ model Complaint {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── SPPT Digital ────────────────────────────────────────────────────────────
@@ -269,6 +299,10 @@ model Sppt {
   taxObject     TaxObject @relation(fields: [taxObjectId], references: [id], onDelete: Cascade)
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taxObjectId])
+  @@index([userId])
+  @@index([taxPeriod])
 }
 
 // ─── Dokumentasi Pengajuan ───────────────────────────────────────────────────
@@ -286,6 +320,10 @@ model TaxSubmission {
 
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ─── Modul GIS & Geo-analytics Baru ───────────────────────────────────────────
@@ -341,6 +379,9 @@ model TaxAssessment {
   assessmentDate   DateTime  @default(now())
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  @@index([objectTaxId])
+  @@index([assessorId])
 }
 
 model ChatMessage {
@@ -353,6 +394,9 @@ model ChatMessage {
   updatedAt DateTime @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model ChatSession {

@@ -3,6 +3,13 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
+import { z } from "zod";
+
+const ProfileSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  phone: z.string().max(20).optional(),
+  address: z.string().max(500).optional(),
+});
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,12 +18,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // Users can only update their own profile; admins can update anyone
-    if (session.user.id !== id && session.user.role !== "ADMIN") {
+    if (session.user.id !== id && !["ADMIN", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await req.json();
-    const { name, phone, address } = body;
+    const parsed = ProfileSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { name, phone, address } = parsed.data;
 
     const oldUser = await prisma.user.findUnique({ where: { id } });
     if (!oldUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -24,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updated = await prisma.user.update({
       where: { id },
       data: {
-        ...(name && { name }),
+        ...(name !== undefined && { name }),
         ...(phone !== undefined && { phone }),
         ...(address !== undefined && { address }),
       },
@@ -51,7 +61,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || !["ADMIN", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     
@@ -81,31 +91,22 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       }
     });
 
-    if (hasRelations) {
-      await prisma.user.update({
-        where: { id },
-        data: { isActive: false }
-      });
+    // Always soft delete to preserve financial history and audit trail,
+    // regardless of whether the user has related records. This ensures
+    // consistent behavior and prevents accidental permanent data loss.
+    await prisma.user.update({
+      where: { id },
+      data: { isActive: false }
+    });
 
-      await AuditService.log({
-        userId: session.user.id,
-        action: "SOFT_DELETE_USER",
-        table: "User",
-        recordId: id,
-        oldValue: oldUser,
-        newValue: { ...oldUser, isActive: false },
-      });
-    } else {
-      await prisma.user.delete({ where: { id } });
-
-      await AuditService.log({
-        userId: session.user.id,
-        action: "DELETE_USER",
-        table: "User",
-        recordId: id,
-        oldValue: oldUser,
-      });
-    }
+    await AuditService.log({
+      userId: session.user.id,
+      action: "SOFT_DELETE_USER",
+      table: "User",
+      recordId: id,
+      oldValue: oldUser,
+      newValue: { ...oldUser, isActive: false },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -16,13 +16,14 @@ export async function GET(
       where: {
         id: id,
         // Non-admin/officer can only view their own objects
-        ...(!["ADMIN", "OFFICER"].includes(session.user.role)
+        ...(!["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)
           ? { ownerId: session.user.id }
           : {}),
       },
       include: {
         payments: {
           orderBy: { taxPeriod: "desc" },
+          take: 20,
           select: {
             id: true,
             invoiceNumber: true,

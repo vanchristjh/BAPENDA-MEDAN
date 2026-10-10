@@ -160,11 +160,11 @@ interface SpptData {
   id: string;
   spptNumber: string;
   taxPeriod: string;
-  njop: any;
-  njoptkp: any;
-  taxObjectVal: any;
+  njop: number | string | null;
+  njoptkp: number | string | null;
+  taxObjectVal: number | string | null;
   isDownloaded: boolean;
-  createdAt: any;
+  createdAt: string | Date;
   taxObject: {
     nop: string;
     name: string;

@@ -38,8 +38,8 @@ export default function Error({
         
         {/* ── Visual Crash Anchor ── */}
         <div className="relative group perspective-1000">
-           <div className="w-40 h-40 bg-white border border-red-100 rounded-[3.5rem] flex items-center justify-center mx-auto mb-12 shadow-2xl shadow-red-500/10 rotate-12 group-hover:rotate-0 transition-transform duration-1000 relative">
-              <div className="absolute inset-0 bg-red-50 rounded-[3.5rem] animate-pulse" />
+           <div className="w-40 h-40 bg-white border border-red-100 rounded-xl flex items-center justify-center mx-auto mb-12 shadow-2xl shadow-red-500/10 rotate-12 group-hover:rotate-0 transition-transform duration-1000 relative">
+              <div className="absolute inset-0 bg-red-50 rounded-xl animate-pulse" />
               <ShieldAlert className="w-20 h-20 text-red-500 relative z-10 animate-bounce" />
            </div>
         </div>
@@ -57,7 +57,7 @@ export default function Error({
         </div>
 
         {/* ── Technical Insight Canvas ── */}
-        <div className="bg-white border border-red-100 p-10 lg:p-14 rounded-[4rem] text-left space-y-8 font-bold shadow-2xl shadow-red-500/5 relative group overflow-hidden">
+        <div className="bg-white border border-red-100 p-10 lg:p-14 rounded-3xl text-left space-y-8 font-bold shadow-2xl shadow-red-500/5 relative group overflow-hidden">
            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-1000">
               <AlertCircle className="w-32 h-32 text-red-600" />
            </div>

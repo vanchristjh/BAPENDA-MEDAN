@@ -4,18 +4,13 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { 
-  Settings, 
-  Database, 
   Users, 
-  TrendingUp, 
   Bell, 
   Save, 
   Loader2, 
   ShieldCheck,
-  AlertTriangle,
   Server,
   Lock,
-  Mail,
   Coins
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -30,7 +25,7 @@ export default function AdminSettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
+    if (status === "authenticated" && !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
       router.replace("/dashboard");
     }
   }, [session, status, router]);
@@ -96,7 +91,7 @@ export default function AdminSettingsPage() {
     { id: "NOTIFICATION", label: "Notifikasi & Alert", icon: Bell },
   ] as const;
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
+  if (status === "loading" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />

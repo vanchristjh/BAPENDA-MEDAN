@@ -4,13 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { 
-  Users, Search, ShieldAlert, Star, 
-  Activity, ArrowRight, Filter, ShieldCheck, 
-  Trash2, Plus, X, Loader2, Eye, Mail, User as UserIcon, Edit2, CheckCircle2, AlertTriangle, Phone, Lock, MapPin, Calendar, Clock, CreditCard, ChevronDown
+  Search, ShieldCheck, 
+  Trash2, Plus, X, Loader2, Eye, Mail, User as UserIcon, Edit2, Phone, Lock, MapPin, Clock, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +26,8 @@ interface AuditLog {
   action: string;
   table: string;
   createdAt: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: Record<string, unknown> | null;
+  newValue: Record<string, unknown> | null;
 }
 
 interface User {
@@ -47,7 +45,7 @@ interface User {
   auditLogs: AuditLog[];
 }
 
-const ROLES = ["USER", "OFFICER", "ADMIN", "MAHASISWA"] as const;
+const ROLES = ["USER", "OFFICER", "ADMIN", "MAHASISWA", "DEVELOPER"] as const;
 type UserRole = (typeof ROLES)[number];
 
 const roleBadge: Record<string, string> = {
@@ -82,12 +80,6 @@ export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
-      router.replace("/dashboard");
-    }
-  }, [session, status, router]);
-
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +89,6 @@ export default function AdminUsersPage() {
   const [filterPayment, setFilterPayment] = useState("ALL");
   const [filterRegion, setFilterRegion] = useState("ALL");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 20;
   
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -120,29 +111,42 @@ export default function AdminUsersPage() {
   });
 
   const fetchUsers = useCallback(() => {
-    if (status !== "authenticated" || (session?.user as any)?.role !== "ADMIN") return;
     setLoading(true);
-    fetch("/api/users")
+    fetch("/api/users?page=1&pageSize=20")
       .then((r) => r.json())
       .then((d) => setUsers(d.users ?? []))
       .catch(() => toast("Gagal Sinkronisasi", "Sistem tidak dapat memanggil data identitas dari database pusat.", "error"))
       .finally(() => setLoading(false));
-  }, [toast, status, session]);
+  }, [toast]);
+
+  const isAdmin = ["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "");
+  const isLoading = status === "loading";
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (status === "authenticated" && !isAdmin) {
+      router.replace("/dashboard");
+    }
+  }, [session, status, router, isAdmin]);
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
-     return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-           <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
-        </div>
-     );
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchUsers();
+  }, [fetchUsers, isAdmin]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterRole, filterStatus, filterPayment, filterRegion]);
+
+  if (isLoading || !isAdmin) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
+      </div>
+    );
   }
 
   const validateNIK = (nik: string) => {
-    if (!nik) return true; // optional in DB
+    if (!nik || nik.trim() === "") return false; // reject empty/whitespace NIK
     return /^\d{16}$/.test(nik);
   };
 
@@ -205,8 +209,8 @@ export default function AdminUsersPage() {
         setNewUser({ name: "", email: "", password: "", role: "USER", nik: "", phone: "", address: "", isActive: true });
         fetchUsers();
         toast("Berhasil", "Node identitas baru telah didaftarkan dalam sistem.", "success");
-    } catch (err: any) {
-        toast("Error", err.message || "Gagal registrasi identitas baru.", "error");
+    } catch (err: unknown) {
+        toast("Error", err instanceof Error ? err.message : "Gagal registrasi identitas baru.", "error");
     } finally {
         setCreateLoading(false);
     }
@@ -267,10 +271,6 @@ export default function AdminUsersPage() {
     return hasArrears ? "MENUNGGAK" : "LUNAS";
   };
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, filterRole, filterStatus, filterPayment, filterRegion]);
-
   const filtered = users.filter((u) => {
     const matchSearch =
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -322,7 +322,7 @@ export default function AdminUsersPage() {
             >
                Registrasi User <Plus className="ml-4 w-5 h-5 group-hover:rotate-90 transition-transform" />
             </Button>
-            <Card padding="lg" variant="outline" className="hidden xl:flex bg-zinc-50 border border-zinc-100 rounded-[2.5rem] shadow-inner py-4 px-8 min-w-[200px] text-right">
+            <Card padding="lg" variant="outline" className="hidden xl:flex bg-zinc-50 border border-zinc-100 rounded-2xl shadow-inner py-4 px-8 min-w-[200px] text-right">
                <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] italic leading-none">Total Nodes</p>
                    <p className="text-2xl font-black italic tracking-tighter uppercase">{filtered.length} <span className="text-primary tracking-normal font-sans text-xs">Identities</span></p>
@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* ── Search & Filter ── */}
-      <div className="flex flex-col gap-6 pt-6 bg-zinc-50/50 p-8 rounded-[3rem] border border-zinc-100 relative z-30 overflow-visible">
+      <div className="flex flex-col gap-6 pt-6 bg-zinc-50/50 p-8 rounded-2xl border border-zinc-100 relative z-30 overflow-visible">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Quick Search */}
           <div className="lg:col-span-4 relative group">
@@ -341,7 +341,7 @@ export default function AdminUsersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari Identitas, Email, atau NIK Pengguna..."
-              className="w-full pl-22 pr-10 h-20 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-bold text-sm tracking-tight italic"
+              className="w-full pl-22 pr-10 h-20 bg-white border border-zinc-100 rounded-2xl outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-bold text-sm tracking-tight italic"
             />
           </div>
           {/* Role Filter */}
@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
              <select
                value={filterRole}
                onChange={(e) => setFilterRole(e.target.value)}
-               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
+               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-2xl outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
              >
                <option value="ALL">Semua Role</option>
                {ROLES.map(r => <option key={r} value={r}>{roleLabel[r]}</option>)}
@@ -361,7 +361,7 @@ export default function AdminUsersPage() {
              <select
                value={filterStatus}
                onChange={(e) => setFilterStatus(e.target.value)}
-               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
+               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-2xl outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
              >
                <option value="ALL">Semua Status Akun</option>
                <option value="ACTIVE">Aktif</option>
@@ -374,7 +374,7 @@ export default function AdminUsersPage() {
              <select
                value={filterPayment}
                onChange={(e) => setFilterPayment(e.target.value)}
-               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
+               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-2xl outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
              >
                <option value="ALL">Semua Status Bayar</option>
                <option value="LUNAS">Lunas Pajak</option>
@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
              <select
                value={filterRegion}
                onChange={(e) => setFilterRegion(e.target.value)}
-               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-[2.5rem] outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
+               className="w-full pl-8 pr-12 h-20 bg-white border border-zinc-100 rounded-2xl outline-none shadow-2xl shadow-primary/[0.02] focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-black text-xs uppercase tracking-widest appearance-none cursor-pointer italic"
              >
                <option value="ALL">Semua Wilayah</option>
                {MEDAN_REGIONS.map(reg => <option key={reg} value={reg}>{reg}</option>)}
@@ -398,7 +398,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* ── Users Table ── */}
-      <Card padding="none" className="bg-white border-zinc-100 rounded-[3rem] overflow-hidden shadow-xl shadow-primary/[0.02]">
+      <Card padding="none" className="bg-white border-zinc-100 overflow-hidden shadow-xl shadow-primary/[0.02]">
         <div className="overflow-x-auto w-full">
            <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
@@ -567,7 +567,7 @@ export default function AdminUsersPage() {
       {/* ── Create Modal ── */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-md p-6 text-left animate-in fade-in duration-500">
-           <Card padding="none" className="bg-white rounded-[5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
+           <Card padding="none" className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
               <div className="flex items-start justify-between mb-16">
                  <div className="space-y-3">
                     <h2 className="text-4xl lg:text-6xl font-black italic tracking-tighter uppercase leading-none italic">New <span className="text-primary">Node.</span></h2>
@@ -583,7 +583,7 @@ export default function AdminUsersPage() {
                        <UserIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                        <input 
                          required 
-                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                          placeholder="Nama Lengkap..." 
                          value={newUser.name}
                          onChange={e => setNewUser({...newUser, name: e.target.value})}
@@ -597,7 +597,7 @@ export default function AdminUsersPage() {
                           <Mail className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
                             required type="email"
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="email@bapenda.go.id" 
                             value={newUser.email}
                             onChange={e => setNewUser({...newUser, email: e.target.value})}
@@ -610,7 +610,7 @@ export default function AdminUsersPage() {
                           <Lock className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
                             required type="password"
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="••••••••" 
                             value={newUser.password}
                             onChange={e => setNewUser({...newUser, password: e.target.value})}
@@ -624,7 +624,7 @@ export default function AdminUsersPage() {
                        <div className="relative group">
                           <UserIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="1271..." 
                             value={newUser.nik}
                             onChange={e => setNewUser({...newUser, nik: e.target.value})}
@@ -636,7 +636,7 @@ export default function AdminUsersPage() {
                        <div className="relative group">
                           <Phone className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="0812..." 
                             value={newUser.phone}
                             onChange={e => setNewUser({...newUser, phone: e.target.value})}
@@ -649,7 +649,7 @@ export default function AdminUsersPage() {
                     <div className="relative group">
                        <MapPin className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                        <input 
-                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                          placeholder="Jl. Letjen Suprapto No. X..." 
                          value={newUser.address}
                          onChange={e => setNewUser({...newUser, address: e.target.value})}
@@ -660,7 +660,7 @@ export default function AdminUsersPage() {
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-8 leading-none">Authority Level</label>
                        <select
-                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
+                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
                          value={newUser.role}
                          onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
                        >
@@ -670,7 +670,7 @@ export default function AdminUsersPage() {
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-8 leading-none">Status Akun</label>
                        <select
-                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
+                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
                          value={newUser.isActive ? "ACTIVE" : "INACTIVE"}
                          onChange={e => setNewUser({...newUser, isActive: e.target.value === "ACTIVE"})}
                        >
@@ -694,7 +694,7 @@ export default function AdminUsersPage() {
       {/* ── Edit Modal ── */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-md p-6 text-left animate-in fade-in duration-500">
-           <Card padding="none" className="bg-white rounded-[5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
+           <Card padding="none" className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
               <div className="flex items-start justify-between mb-16">
                  <div className="space-y-3">
                     <h2 className="text-4xl lg:text-6xl font-black italic tracking-tighter uppercase leading-none italic">Edit <span className="text-primary">Profile.</span></h2>
@@ -710,7 +710,7 @@ export default function AdminUsersPage() {
                        <UserIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                        <input 
                          required 
-                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                          placeholder="Nama Lengkap..." 
                          value={editForm.name}
                          onChange={e => setEditForm({...editForm, name: e.target.value})}
@@ -724,7 +724,7 @@ export default function AdminUsersPage() {
                           <Mail className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
                             required type="email"
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="email@bapenda.go.id" 
                             value={editForm.email}
                             onChange={e => setEditForm({...editForm, email: e.target.value})}
@@ -737,7 +737,7 @@ export default function AdminUsersPage() {
                           <Lock className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
                             type="password"
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="Isi untuk ganti password..." 
                             value={editForm.password}
                             onChange={e => setEditForm({...editForm, password: e.target.value})}
@@ -751,7 +751,7 @@ export default function AdminUsersPage() {
                        <div className="relative group">
                           <UserIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="1271..." 
                             value={editForm.nik}
                             onChange={e => setEditForm({...editForm, nik: e.target.value})}
@@ -763,7 +763,7 @@ export default function AdminUsersPage() {
                        <div className="relative group">
                           <Phone className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                           <input 
-                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                            className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                             placeholder="0812..." 
                             value={editForm.phone}
                             onChange={e => setEditForm({...editForm, phone: e.target.value})}
@@ -776,7 +776,7 @@ export default function AdminUsersPage() {
                     <div className="relative group">
                        <MapPin className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-primary transition-all" />
                        <input 
-                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                         className="w-full pl-20 pr-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                          placeholder="Jl. Letjen Suprapto No. X..." 
                          value={editForm.address}
                          onChange={e => setEditForm({...editForm, address: e.target.value})}
@@ -787,7 +787,7 @@ export default function AdminUsersPage() {
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-8 leading-none">Authority Level</label>
                        <select
-                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
+                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
                          value={editForm.role}
                          onChange={e => setEditForm({...editForm, role: e.target.value as UserRole})}
                        >
@@ -797,7 +797,7 @@ export default function AdminUsersPage() {
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-8 leading-none">Status Akun</label>
                        <select
-                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
+                         className="w-full px-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all font-black text-xs uppercase tracking-widest italic appearance-none cursor-pointer shadow-inner animate-none"
                          value={editForm.isActive ? "ACTIVE" : "INACTIVE"}
                          onChange={e => setEditForm({...editForm, isActive: e.target.value === "ACTIVE"})}
                        >
@@ -821,7 +821,7 @@ export default function AdminUsersPage() {
       {/* ── Detail & History Modal ── */}
       {showDetailModal && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-md p-6 text-left animate-in fade-in duration-500">
-           <Card padding="none" className="bg-white rounded-[5rem] shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
+           <Card padding="none" className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-20">
               <div className="flex items-start justify-between mb-12">
                  <div className="space-y-3">
                     <h2 className="text-4xl lg:text-6xl font-black italic tracking-tighter uppercase leading-none italic">User <span className="text-primary">Details.</span></h2>
@@ -832,7 +832,7 @@ export default function AdminUsersPage() {
 
               <div className="space-y-12">
                  {/* Profil Summary */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-zinc-50 p-8 rounded-[3rem] border border-zinc-100">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
                     <div>
                        <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Informasi Utama</p>
                        <div className="space-y-3 mt-4 text-sm font-bold text-zinc-800">
@@ -856,7 +856,7 @@ export default function AdminUsersPage() {
                  {/* Riwayat Pembayaran */}
                  <div className="space-y-4">
                     <p className="text-xs font-black uppercase text-primary tracking-widest border-l-4 border-primary pl-4">Riwayat Pembayaran Pajak</p>
-                    <div className="border border-zinc-100 rounded-[2.5rem] overflow-hidden">
+                    <div className="border border-zinc-100 rounded-2xl overflow-hidden">
                        <table className="w-full text-left border-collapse">
                           <thead>
                              <tr className="bg-zinc-50 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-150">

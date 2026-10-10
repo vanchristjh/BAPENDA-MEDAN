@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const MAX_MESSAGE_LENGTH = 1000;
@@ -274,7 +275,6 @@ async function wpPayments(userId: string): Promise<BotReply> {
 async function getReply(query: string, session: SessionUser | null): Promise<BotReply> {
   const userId = session?.id ?? null;
   const role = session?.role ?? null;
-  const roleLabel = getRoleLabel(role);
 
   // ─── Role-based queries ──────────────────────────────────────────────────
 
@@ -723,10 +723,12 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id || null;
+    if (!userId) return NextResponse.json({ success: true, messages: [] });
 
     const messages = await prisma.chatMessage.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
+      take: 100,
     });
 
     return NextResponse.json({ success: true, messages });
@@ -737,13 +739,16 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`chatbot:${clientKey(req)}`, 30, 60_000)) {
+    return NextResponse.json({ success: false, error: "Terlalu banyak permintaan. Coba lagi nanti." }, { status: 429 });
+  }
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id || null;
     const role = session?.user?.role || null;
 
     const body = await req.json();
-    const rawMessage = body?.message;
+    const rawMessage = typeof body?.message === "string" ? body.message.slice(0, 2000) : body?.message;
 
     // ── Input validation ───────────────────────────────────────────────────
     if (!rawMessage || typeof rawMessage !== "string") {
@@ -754,6 +759,14 @@ export async function POST(req: NextRequest) {
 
     if (safeMessage.length < 2) {
       return NextResponse.json({ success: false, error: "Pesan terlalu pendek. Silakan ketik pertanyaan yang lebih jelas." }, { status: 400 });
+    }
+
+    // ── Auth first: no anonymous writes (spam + PII risk) ──
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: "Silakan login untuk menggunakan chatbot.",
+      }, { status: 401 });
     }
 
     // ── Spam / abuse detection ─────────────────────────────────────────────
@@ -772,7 +785,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, reply: warning });
     }
 
-    // ── Rate limiting ──────────────────────────────────────────────────────
+    // ── Rate limiting (per user, DB-backed 15/10s) ──
     const recentCount = await prisma.chatMessage.count({
       where: {
         userId,

@@ -25,7 +25,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       xl: "p-10 md:p-14",
     };
 
-    const cornerRadius = "rounded-[2.5rem] lg:rounded-[3rem]";
+    const cornerRadius = "rounded-lg lg:rounded-xl";
 
     return (
       <div

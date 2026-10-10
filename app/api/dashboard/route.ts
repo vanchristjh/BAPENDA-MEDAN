@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
     const [myObjects, myPayments, activeTagihan, spptCount, submissionActiveCount, mySubmissions] = await Promise.all([
       prisma.taxObject.findMany({
         where: { ownerId: userId },
+        orderBy: { createdAt: "desc" },
+        take: 100,
         include: { payments: { take: 3, orderBy: { createdAt: "desc" } } },
       }),
       prisma.payment.findMany({
@@ -72,6 +74,7 @@ export async function GET(req: NextRequest) {
       prisma.payment.findMany({
         where: { userId, status: { in: ["PENDING", "EXPIRED"] } },
         orderBy: { createdAt: "desc" },
+        take: 100,
         include: { taxObject: { select: { nop: true, type: true, name: true } } },
       }),
       prisma.sppt.count({

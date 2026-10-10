@@ -8,20 +8,12 @@ import {
   Building2, 
   Map, 
   Scale, 
-  ClipboardCheck, 
-  Wallet, 
-  FileSearch, 
-  GraduationCap, 
-  MapPinned, 
+  ClipboardCheck,
   Loader2, 
   Clock, 
   History, 
   ArrowRight,
-  ClipboardList,
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  Users
+  ClipboardList
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +21,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import type { MapContainerProps, TileLayerProps, MarkerProps, PopupProps } from "react-leaflet";
+import type { DivIcon } from "leaflet";
 
 // Dynamically import Leaflet components to prevent SSR issues
 const MapContainer = dynamic<MapContainerProps>(() => import("react-leaflet").then((mod) => mod.MapContainer), { 
@@ -71,9 +64,9 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
   const [gisData, setGisData] = useState<GisPoint[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [mapIconVerified, setMapIconVerified] = useState<any>(null);
-  const [mapIconPending, setMapIconPending] = useState<any>(null);
-  const [mapIconRejected, setMapIconRejected] = useState<any>(null);
+  const [mapIconVerified, setMapIconVerified] = useState<DivIcon | null>(null);
+  const [mapIconPending, setMapIconPending] = useState<DivIcon | null>(null);
+  const [mapIconRejected, setMapIconRejected] = useState<DivIcon | null>(null);
 
   // Center of Medan
   const center: [number, number] = [3.595, 98.672];
@@ -133,7 +126,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
     });
   }, []);
 
-  const getLogDetails = (action: string, table: string) => {
+  const getLogDetails = (action: string) => {
     const act = action.toUpperCase();
     if (act.includes("CREATE") || act.includes("INSERT")) {
       return { label: "Pendataan Baru", color: "text-[#3B82F6]", bg: "bg-[#3B82F6]/5", icon: Building2 };
@@ -156,7 +149,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20 selection:bg-[#1E40AF]/20 text-left bg-[#F8FAFC]">
       
       {/* ── Dashboard Hero ── */}
-      <section className="relative bg-white border border-zinc-150 rounded-[2rem] p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
+      <section className="relative bg-white border border-zinc-150 rounded-lg p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
          <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2">
                <div className="w-2.5 h-2.5 bg-[#1E40AF] rounded-full animate-pulse" />
@@ -180,7 +173,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
 
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1 */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Menunggu Verifikasi</p>
                   <h4 className="text-2xl font-black text-foreground">{stats?.pendingVerificationObjects ?? 0} Objek</h4>
@@ -192,7 +185,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* KPI 2 */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Pengajuan Baru</p>
                   <h4 className="text-2xl font-black text-foreground">{stats?.newSubmissions ?? 0} Berkas</h4>
@@ -204,7 +197,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* KPI 3 */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Pengajuan Diproses</p>
                   <h4 className="text-2xl font-black text-foreground">{stats?.inProgressSubmissions ?? 0} Berkas</h4>
@@ -216,7 +209,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* KPI 4 */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Tugas Lapangan</p>
                   <h4 className="text-2xl font-black text-foreground">{stats?.fieldTasksToday ?? 0} Tugas</h4>
@@ -264,7 +257,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
          {/* Map Column */}
          <div className="lg:col-span-8 space-y-4">
-            <Card padding="none" className="bg-white border border-zinc-150 rounded-[1.5rem] overflow-hidden shadow-sm flex flex-col">
+            <Card padding="none" className="bg-white border border-zinc-150 overflow-hidden shadow-sm flex flex-col">
                <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-white z-10">
                   <div>
                      <h3 className="text-base font-black uppercase text-zinc-800 leading-none">Peta Pendataan Bidang PBB</h3>
@@ -337,7 +330,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
 
          {/* Activity Log Column */}
          <div className="lg:col-span-4">
-            <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm flex flex-col h-full justify-between">
+            <Card padding="md" className="bg-white border border-zinc-150 shadow-sm flex flex-col h-full justify-between">
                <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                      <div className="flex items-center gap-2">
@@ -351,7 +344,7 @@ export const OfficerDashboard = ({ session }: { session: Session }) => {
                         <div className="py-12 text-center text-zinc-300 italic font-bold">Belum ada aktivitas.</div>
                      ) : (
                         activities.slice(0, 4).map((act) => {
-                           const actDetails = getLogDetails(act.action, act.table);
+                           const actDetails = getLogDetails(act.action);
                            return (
                               <div key={act.id} className="flex gap-3 group transition-all">
                                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center border border-zinc-100 flex-shrink-0", actDetails.color, actDetails.bg)}>

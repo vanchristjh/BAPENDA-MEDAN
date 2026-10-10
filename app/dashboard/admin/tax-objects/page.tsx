@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   Building2, 
   Search, 
@@ -12,12 +12,10 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  Filter,
   Layers,
   Map as MapIcon,
   DollarSign,
   Download,
-  Calendar,
   Clock,
   FileText,
   ChevronDown
@@ -152,7 +150,7 @@ export default function AdminTaxObjectsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  const fetchObjects = async () => {
+  const fetchObjects = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/tax-objects");
@@ -163,11 +161,11 @@ export default function AdminTaxObjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchObjects();
-  }, []);
+  }, [fetchObjects]);
 
   const fetchAuditLogs = async (recordId: string) => {
     setLoadingLogs(true);
@@ -306,7 +304,7 @@ export default function AdminTaxObjectsPage() {
               document={<TaxObjectsReport data={filtered} />}
               fileName={`Laporan_Objek_Pajak_${new Date().toISOString().slice(0, 10)}.pdf`}
             >
-              {({ loading }: any) => (
+              {({ loading }: { loading: boolean }) => (
                 <Button disabled={loading} variant="primary" size="lg" className="h-16 px-6 rounded-2xl flex items-center gap-2 font-bold text-xs uppercase shadow-glow bg-primary text-white">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><FileText className="w-4 h-4" /> Export PDF</>}
                 </Button>
@@ -316,7 +314,7 @@ export default function AdminTaxObjectsPage() {
       </div>
 
       {/* ── Quick Controls & Filters ── */}
-      <div className="flex flex-col gap-6 pt-6 bg-zinc-50/50 p-8 rounded-[3rem] border border-zinc-100 shadow-inner relative z-30 overflow-visible">
+      <div className="flex flex-col gap-6 pt-6 bg-zinc-50/50 p-8 rounded-2xl border border-zinc-100 shadow-inner relative z-30 overflow-visible">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Quick Search */}
           <div className="md:col-span-4 relative group">
@@ -325,7 +323,7 @@ export default function AdminTaxObjectsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari NOP, Nama Objek, atau Nama Pemilik..."
-              className="w-full pl-20 pr-10 h-18 bg-white border border-zinc-150 rounded-[2rem] outline-none shadow-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold text-sm tracking-tight italic"
+              className="w-full pl-20 pr-10 h-18 bg-white border border-zinc-150 rounded-xl outline-none shadow-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold text-sm tracking-tight italic"
             />
           </div>
 
@@ -337,7 +335,7 @@ export default function AdminTaxObjectsPage() {
                 setFilterKecamatan(e.target.value);
                 setFilterKelurahan("ALL"); // Reset kelurahan
               }}
-              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-[2rem] text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
+              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
             >
               <option value="ALL">SEMUA KECAMATAN</option>
               {Object.keys(KELURAHANS).map(k => (
@@ -353,7 +351,7 @@ export default function AdminTaxObjectsPage() {
               value={filterKelurahan}
               onChange={(e) => setFilterKelurahan(e.target.value)}
               disabled={filterKecamatan === "ALL"}
-              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-[2rem] text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="ALL">SEMUA KELURAHAN</option>
               {filterKecamatan !== "ALL" && KELURAHANS[filterKecamatan]?.map(k => (
@@ -368,7 +366,7 @@ export default function AdminTaxObjectsPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-[2rem] text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
+              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
             >
               <option value="ALL">SEMUA TIPE</option>
               {uniqueTypes.map(t => (
@@ -383,7 +381,7 @@ export default function AdminTaxObjectsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-[2rem] text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
+              className="w-full h-18 pl-6 pr-12 bg-white border border-zinc-150 rounded-xl text-xs font-black uppercase tracking-widest text-zinc-700 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm appearance-none"
             >
               <option value="ALL">SEMUA STATUS</option>
               <option value="PENDING">PENDING</option>
@@ -396,7 +394,7 @@ export default function AdminTaxObjectsPage() {
       </div>
 
       {/* ── Global Registry Table ── */}
-      <Card padding="none" className="overflow-hidden border border-zinc-100 rounded-[3.5rem] shadow-xl shadow-primary/[0.02]">
+      <Card padding="none" className="overflow-hidden border border-zinc-100 shadow-xl shadow-primary/[0.02]">
         <div className="overflow-x-auto w-full">
           <table className="w-full border-collapse min-w-[900px]">
             <thead>
@@ -554,7 +552,7 @@ export default function AdminTaxObjectsPage() {
       {/* ── Detail Modal ── */}
       {isModalOpen && selectedObj && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white border border-zinc-100 rounded-[5rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[92vh] text-left">
+          <div className="bg-white border border-zinc-100 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[92vh] text-left">
             
             {/* Modal Header */}
             <div className="px-10 py-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
@@ -574,7 +572,7 @@ export default function AdminTaxObjectsPage() {
             <div className="px-10 py-10 overflow-y-auto space-y-10 text-left">
               
               {/* Top Summary Banner */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-zinc-50 border border-zinc-100 p-8 rounded-[2.5rem] shadow-inner font-bold text-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-zinc-50 border border-zinc-100 p-8 rounded-2xl shadow-inner font-bold text-zinc-800">
                 <div className="space-y-1">
                   <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 italic">Nomor Objek Pajak</p>
                   <p className="text-sm font-mono">{selectedObj.nop}</p>

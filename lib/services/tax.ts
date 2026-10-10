@@ -7,11 +7,19 @@ export class TaxService {
    */
   static async getTaxBillByNOP(nop: string) {
     try {
+      const cleanNop = nop.trim().slice(0, 32);
       const taxObject = await prisma.taxObject.findUnique({
-        where: { nop },
-        include: {
+        where: { nop: cleanNop },
+        select: {
+          nop: true,
+          name: true,
+          address: true,
+          type: true,
+          status: true,
           payments: {
+            select: { amount: true, status: true, taxPeriod: true },
             orderBy: { createdAt: 'desc' },
+            take: 50,
           }
         }
       });
@@ -19,14 +27,19 @@ export class TaxService {
       if (!taxObject) throw new Error("Nomor Objek Pajak tidak ditemukan.");
 
       const pendingPayments = taxObject.payments.filter(p => p.status === 'PENDING' || p.status === 'EXPIRED');
-      const paidHistory = taxObject.payments.filter(p => p.status === 'PAID');
 
       return {
         success: true,
         data: {
-          objectInfo: taxObject,
+          objectInfo: {
+            nop: taxObject.nop,
+            name: taxObject.name,
+            address: taxObject.address,
+            type: taxObject.type,
+            status: taxObject.status,
+          },
           pendingAmount: pendingPayments.reduce((acc, curr) => acc + Number(curr.amount), 0),
-          recentPayments: paidHistory
+          recentPayments: []
         }
       };
     } catch (err: unknown) {

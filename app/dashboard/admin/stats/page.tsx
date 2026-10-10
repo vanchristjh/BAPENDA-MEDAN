@@ -7,14 +7,12 @@ import {
   BarChart3, 
   TrendingUp, 
   Users, 
-  CreditCard, 
   Download, 
   Star, 
   ShieldCheck, 
   Activity, 
   ArrowUpRight,
   TrendingDown,
-  Building2,
   Percent,
   Loader2
 } from "lucide-react";
@@ -67,7 +65,7 @@ export default function AdminStatsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
+    if (status === "authenticated" && !["ADMIN", "OFFICER", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
       router.replace("/dashboard");
     }
   }, [session, status, router]);
@@ -77,7 +75,7 @@ export default function AdminStatsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status !== "authenticated" || (session?.user as any)?.role !== "ADMIN") return;
+    if (status !== "authenticated" || !["ADMIN", "OFFICER", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) return;
     fetch("/api/admin/dashboard-stats")
       .then((r) => {
         if (!r.ok) throw new Error();
@@ -88,7 +86,7 @@ export default function AdminStatsPage() {
       .finally(() => setLoading(false));
   }, [toast, session, status]);
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
+  if (status === "loading" || !["ADMIN", "OFFICER", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />

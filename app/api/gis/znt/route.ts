@@ -10,29 +10,20 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const zones = await prisma.landValueZone.findMany();
-    
-    // For each zone, we count the number of tax objects in that district/village
-    const zoneStats = await Promise.all(zones.map(async (zone) => {
-      const taxObjects = await prisma.taxObject.findMany({
-        where: {
-          address: {
-            contains: zone.district,
-            mode: "insensitive"
-          }
-        },
-        select: {
-          njop: true
-        }
-      });
+    const zones = await prisma.landValueZone.findMany({ take: 100, orderBy: { createdAt: "desc" } });
 
-      const count = taxObjects.length;
-      const totalNJOP = taxObjects.reduce((acc, curr) => acc + Number(curr.njop || 0), 0);
-      const avgNJOP = count > 0 ? Math.round(totalNJOP / count) : 0;
+    // DB-side count + avg per zone (was per-zone findMany 2k + JS reduce)
+    const zoneStats = await Promise.all(zones.map(async (zone) => {
+      const where = { address: { contains: zone.district, mode: "insensitive" as const } };
+      const [taxObjectCount, njopAgg] = await Promise.all([
+        prisma.taxObject.count({ where }),
+        prisma.taxObject.aggregate({ where, _avg: { njop: true } }),
+      ]);
+      const avgNJOP = Math.round(Number(njopAgg._avg?.njop ?? 0));
 
       return {
         ...zone,
-        taxObjectCount: count,
+        taxObjectCount,
         avgNJOP
       };
     }));

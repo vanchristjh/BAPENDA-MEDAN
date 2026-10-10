@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
   FileText, Download, Eye, Search, Loader2, 
-  Building2, Calendar, CreditCard, ChevronRight, X, Printer, ShieldAlert
+  X, ShieldAlert
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,9 +15,9 @@ interface Sppt {
   id: string;
   spptNumber: string;
   taxPeriod: string;
-  njop: any;
-  njoptkp: any;
-  taxObjectVal: any;
+  njop: number | string | null;
+  njoptkp: number | string | null;
+  taxObjectVal: number | string | null;
   isDownloaded: boolean;
   createdAt: string;
   taxObject: {
@@ -53,11 +53,6 @@ export default function UserSpptPage() {
   const [selectedSppt, setSelectedSppt] = useState<Sppt | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [pdfGeneratingId, setPdfGeneratingId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleDownloadPDF = async (sppt: Sppt) => {
     setPdfGeneratingId(sppt.id);
@@ -65,7 +60,7 @@ export default function UserSpptPage() {
       const { pdf } = await import("@react-pdf/renderer");
       const { DigitalSpptDocument } = await import("@/components/sppt/DigitalSppt");
       
-      const blob = await pdf(<DigitalSpptDocument data={sppt as any} />).toBlob();
+      const blob = await pdf(<DigitalSpptDocument data={sppt} />).toBlob();
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement("a");
@@ -206,7 +201,6 @@ export default function UserSpptPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((sppt) => {
-            const njopVal = typeof sppt.njop === "string" ? parseFloat(sppt.njop) : Number(sppt.njop || 0);
             return (
               <Card 
                 key={sppt.id} 

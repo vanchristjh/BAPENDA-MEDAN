@@ -16,7 +16,9 @@ function verifyMidtransSignature(body: Record<string, unknown>): boolean {
     .update(orderId + statusCode + grossAmount + serverKey)
     .digest("hex");
 
-  return hash === signatureKey;
+  const a = Buffer.from(hash);
+  const b = Buffer.from(signatureKey);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export async function POST(req: NextRequest) {

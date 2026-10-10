@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 const RegisterSchema = z.object({
   name: z.string().min(2, "Nama harus minimal 2 karakter"),
@@ -13,6 +14,9 @@ const RegisterSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`register:${clientKey(req)}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Terlalu banyak percobaan. Coba lagi nanti." }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const parsed = RegisterSchema.safeParse(body);

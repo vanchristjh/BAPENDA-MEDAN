@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   GraduationCap, 
   Upload, 
   Send, 
   Info, 
   CheckCircle2, 
-  AlertCircle,
   Building,
   User,
-  BookOpen,
   Clock,
-  ChevronRight,
-  MoreVertical,
   Plus,
   ArrowRight,
   Loader2,
@@ -59,11 +55,7 @@ export default function PengajuanRisetPage() {
     documentUrl: "",
   });
 
-  useEffect(() => {
-    fetchMyRequests();
-  }, []);
-
-  const fetchMyRequests = async () => {
+  const fetchMyRequests = useCallback(async () => {
     setFetching(true);
     try {
       const res = await fetch("/api/research");
@@ -74,7 +66,11 @@ export default function PengajuanRisetPage() {
     } finally {
       setFetching(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchMyRequests();
+  }, [fetchMyRequests]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

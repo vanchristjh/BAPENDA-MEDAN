@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
-  FileText, Plus, Search, Loader2, X, AlertTriangle, 
-  CheckCircle2, Clock, Upload, ArrowUpRight, HelpCircle
+  FileText, Plus, Search, Loader2, X, 
+  ArrowUpRight, HelpCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -54,23 +54,23 @@ export default function UserSubmissionsPage() {
     documentUrl: ""
   });
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/submissions");
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setSubmissions(data.submissions || []);
+      setSubmissions(Array.isArray(data) ? data : (data.submissions ?? []));
     } catch {
       toast("Error", "Gagal memuat riwayat pengajuan.", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchSubmissions();
-  }, []);
+  }, [fetchSubmissions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

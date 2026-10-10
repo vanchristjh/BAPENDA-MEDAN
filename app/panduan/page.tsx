@@ -3,8 +3,8 @@
 import PublicLayout from "@/components/PublicLayout";
 import {
    CreditCard, ArrowRight, ShieldCheck, Zap,
-   Smartphone, Monitor, HelpCircle,
-   Play, Download, CheckCircle, Search
+   HelpCircle,
+   Play, Download, Search
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";

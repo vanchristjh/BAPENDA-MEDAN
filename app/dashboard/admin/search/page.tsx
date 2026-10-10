@@ -2,11 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { Search, Users, Building2, CreditCard, ArrowRight, Loader2, Star } from "lucide-react";
+import { Users, Building2, CreditCard, ArrowRight, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface SearchResults {
   users: Array<{ id: string; name: string; email: string; role: string; nik?: string; phone?: string }>;
@@ -17,21 +16,27 @@ interface SearchResults {
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
-  const [results, setResults] = useState<SearchResults | null>(null);
+  const [results, setResults] = useState<SearchResults | null>(!query ? { users: [], taxObjects: [], payments: [] } : null);
   const [loading, setLoading] = useState(true);
+
+  const performSearch = async (q: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setResults(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!query) {
-      setResults({ users: [], taxObjects: [], payments: [] });
-      setLoading(false);
       return;
     }
-    setLoading(true);
-    fetch(`/api/admin/search?q=${encodeURIComponent(query)}`)
-      .then((r) => r.json())
-      .then((d) => setResults(d))
-      .catch((e) => console.error(e))
-      .finally(() => setLoading(false));
+    performSearch(query);
   }, [query]);
 
   function formatCurrency(val: number) {

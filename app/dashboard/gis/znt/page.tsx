@@ -4,14 +4,14 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Layers, MapPin, TrendingUp, TrendingDown, Landmark, Map as MapIcon, Filter, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Landmark, Filter, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 import type { MapContainerProps, TileLayerProps, PolygonProps, PopupProps } from "react-leaflet";
 
 const MapContainer = dynamic<MapContainerProps>(() => import("react-leaflet").then((mod) => mod.MapContainer), { 
   ssr: false,
-  loading: () => <div className="w-full h-[550px] bg-zinc-50 animate-pulse rounded-[3rem] flex items-center justify-center italic text-xs uppercase tracking-widest text-zinc-400">Memuat Komponen Peta...</div>
+  loading: () => <div className="w-full h-[550px] bg-zinc-50 animate-pulse rounded-2xl flex items-center justify-center italic text-xs uppercase tracking-widest text-zinc-400">Memuat Komponen Peta...</div>
 });
 const TileLayer = dynamic<TileLayerProps>(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
 const Polygon = dynamic<PolygonProps>(() => import("react-leaflet").then((mod) => mod.Polygon), { ssr: false });
@@ -29,18 +29,19 @@ interface Zone {
   avgNJOP: number;
 }
 
+type SessionRole = { role?: string };
+
 export default function ZNTPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userRole = (session?.user as SessionRole | undefined)?.role;
+  const isAuthorized = userRole === "ADMIN" || userRole === "OFFICER" || userRole === "DEVELOPER";
 
   useEffect(() => {
-    if (status === "authenticated") {
-      const role = (session?.user as any)?.role;
-      if (role !== "ADMIN" && role !== "OFFICER") {
-        router.replace("/dashboard");
-      }
+    if (status === "authenticated" && !isAuthorized) {
+      router.replace("/dashboard");
     }
-  }, [session, status, router]);
+  }, [isAuthorized, status, router]);
 
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,8 +50,7 @@ export default function ZNTPage() {
   // Fetch data (runs once on mount, safe guard inside)
   useEffect(() => {
     import("leaflet");
-    if (status !== "authenticated") return;
-    if ((session?.user as any)?.role !== "ADMIN" && (session?.user as any)?.role !== "OFFICER") return;
+    if (status !== "authenticated" || !isAuthorized) return;
     fetch("/api/gis/znt")
       .then(res => res.json())
       .then(json => {
@@ -61,7 +61,7 @@ export default function ZNTPage() {
         console.error(err);
         setLoading(false);
       });
-  }, [status, session]);
+  }, [status, isAuthorized]);
 
   const filteredZones = useMemo(() => {
     return zones.filter(z => districtFilter ? z.district.toLowerCase() === districtFilter.toLowerCase() : true);
@@ -90,7 +90,7 @@ export default function ZNTPage() {
     }
   };
 
-  if (status === "loading" || ((session?.user as any)?.role !== "ADMIN" && (session?.user as any)?.role !== "OFFICER")) {
+  if (status === "loading" || !isAuthorized) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
@@ -126,7 +126,7 @@ export default function ZNTPage() {
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center">
             <TrendingUp className="w-6 h-6" />
           </div>
@@ -137,7 +137,7 @@ export default function ZNTPage() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center">
             <TrendingDown className="w-6 h-6" />
           </div>
@@ -148,7 +148,7 @@ export default function ZNTPage() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center">
             <Landmark className="w-6 h-6" />
           </div>
@@ -162,7 +162,7 @@ export default function ZNTPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Sidebar Controls */}
-        <Card className="lg:col-span-1 p-6 space-y-6 bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-visible relative z-30">
+        <Card className="lg:col-span-1 p-6 space-y-6 bg-white border border-zinc-100 rounded-2xl shadow-sm overflow-visible relative z-30">
           <h3 className="font-black italic uppercase text-sm tracking-widest flex items-center gap-2 text-primary"><Filter className="w-4 h-4" /> Filter Wilayah</h3>
           
           <div className="space-y-4">
@@ -201,7 +201,7 @@ export default function ZNTPage() {
         </Card>
 
         {/* Leaflet Map */}
-        <Card padding="none" className="lg:col-span-3 h-[550px] rounded-[2.5rem] overflow-hidden border border-zinc-100 shadow-2xl relative">
+        <Card padding="none" className="lg:col-span-3 h-[550px] rounded-2xl overflow-hidden border border-zinc-100 shadow-2xl relative">
           <MapContainer 
             center={[3.595, 98.672]} 
             zoom={13} 

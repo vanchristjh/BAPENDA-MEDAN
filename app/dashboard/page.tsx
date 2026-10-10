@@ -20,7 +20,7 @@ export default async function DashboardPage() {
 
   const role = (session.user as { role?: string }).role;
 
-  if (role === "ADMIN") {
+  if (role === "ADMIN" || role === "DEVELOPER") {
     return <AdminDashboard session={session} />;
   }
 

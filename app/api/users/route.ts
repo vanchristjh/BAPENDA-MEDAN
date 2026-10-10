@@ -4,6 +4,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+
+const UpdateUserSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(2).max(100).optional(),
+  email: z.string().email().max(100).optional(),
+  phone: z.string().max(20).optional(),
+  nik: z.string().length(16).optional().or(z.literal("")),
+  role: z.enum(["USER", "OFFICER", "ADMIN", "MAHASISWA", "DEVELOPER"]).optional(),
+  isActive: z.boolean().optional(),
+  password: z.string().min(8).max(100).optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +27,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const hasPagination = url.searchParams.has("page") || url.searchParams.has("pageSize");
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-    const pageSize = hasPagination ? Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "20"))) : 1000;
+    const pageSize = hasPagination ? Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "20"))) : 20;
     const search = url.searchParams.get("search") || "";
     const role = url.searchParams.get("role") || "";
     const status = url.searchParams.get("status") || "";
@@ -60,6 +72,8 @@ export async function GET(req: NextRequest) {
           createdAt: true,
           _count: { select: { taxObjects: true, payments: true } },
           payments: {
+            take: 5,
+            orderBy: { createdAt: "desc" },
             select: {
               id: true,
               amount: true,
@@ -74,15 +88,13 @@ export async function GET(req: NextRequest) {
             }
           },
           auditLogs: {
-            take: 10,
+            take: 5,
             orderBy: { createdAt: "desc" },
             select: {
               id: true,
               action: true,
               table: true,
               createdAt: true,
-              oldValue: true,
-              newValue: true
             }
           }
         },
@@ -106,11 +118,15 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || !["ADMIN", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id, name, email, phone, nik, role, isActive, password } = await req.json();
+    const parsed = UpdateUserSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { id, name, email, phone, nik, role, isActive, password } = parsed.data;
     const oldUser = await prisma.user.findUnique({
       where: { id },
     });
@@ -119,7 +135,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const data: any = {
+    const data: Record<string, unknown> = {
       ...(name !== undefined && { name }),
       ...(email !== undefined && { email }),
       ...(phone !== undefined && { phone }),
@@ -162,14 +178,29 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
+const CreateUserSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email().max(100),
+  password: z.string().min(8).max(100),
+  role: z.enum(["USER", "OFFICER", "ADMIN", "MAHASISWA", "DEVELOPER"]).optional(),
+  nik: z.string().length(16).optional().or(z.literal("")),
+  phone: z.string().max(20).optional(),
+  address: z.string().max(500).optional(),
+  isActive: z.boolean().optional(),
+});
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || !["ADMIN", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name, email, password, role, nik, phone, address, isActive } = await req.json();
+    const parsed = CreateUserSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { name, email, password, role, nik, phone, address, isActive } = parsed.data;
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ error: "Email already exists" }, { status: 400 });
 
@@ -180,9 +211,9 @@ export async function POST(req: NextRequest) {
         email,
         password: hashedPassword,
         role: role || "USER",
-        nik,
-        phone,
-        address,
+        nik: nik || null,
+        phone: phone || null,
+        address: address || null,
         isActive: isActive !== undefined ? isActive : true,
       },
     });

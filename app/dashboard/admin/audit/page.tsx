@@ -3,18 +3,18 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { 
-  ShieldAlert, 
-  Search, 
-  Filter, 
-  RefreshCcw, 
-  Calendar, 
-  ChevronLeft, 
+import {
+  ShieldAlert,
+  Search,
+  Filter,
+  RefreshCcw,
+  Calendar,
+  ChevronLeft,
   ChevronRight,
-  Database,
   Users,
   Activity,
   Clock,
+  Database,
   Loader2
 } from "lucide-react";
 // import { format } from "date-fns";
@@ -25,8 +25,8 @@ interface AuditLog {
   action: string;
   table: string;
   recordId: string;
-  oldValue: Record<string, any> | null;
-  newValue: Record<string, any> | null;
+  oldValue: Record<string, unknown> | null;
+  newValue: Record<string, unknown> | null;
   createdAt: string;
   user: {
     name: string | null;
@@ -40,7 +40,7 @@ export default function AuditLogPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
+    if (status === "authenticated" && !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
       router.replace("/dashboard");
     }
   }, [session, status, router]);
@@ -52,7 +52,7 @@ export default function AuditLogPage() {
   const [limit] = useState(20);
 
   // Filters
-  const [userId, setUserId] = useState("");
+  const [userId] = useState("");
   const [table, setTable] = useState("");
   const [action, setAction] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -86,11 +86,11 @@ export default function AuditLogPage() {
   }, [limit, page, userId, table, action, startDate, endDate]);
 
   useEffect(() => {
-    if (status !== "authenticated" || (session?.user as any)?.role !== "ADMIN") return;
+    if (status !== "authenticated" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) return;
     fetchLogs();
   }, [fetchLogs, status, session]);
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
+  if (status === "loading" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />

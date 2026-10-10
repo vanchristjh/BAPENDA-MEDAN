@@ -4,15 +4,23 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const AssessmentSchema = z.object({
+  objectTaxId: z.string().min(1).max(100),
+  newNJOP: z.coerce.number().positive().max(1e15),
+  reason: z.string().min(10).max(1000),
+});
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const assessments = await prisma.taxAssessment.findMany({
+      take: 100,
       include: {
         objectTax: {
           select: {
@@ -75,15 +83,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { objectTaxId, newNJOP, reason } = await req.json();
-
-    if (!objectTaxId || !newNJOP || !reason) {
-      return NextResponse.json({ error: "Semua field wajib diisi" }, { status: 400 });
+    const parsed = AssessmentSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { objectTaxId, newNJOP, reason } = parsed.data;
 
     const taxObject = await prisma.taxObject.findUnique({
       where: { id: objectTaxId }
@@ -94,7 +102,7 @@ export async function POST(req: NextRequest) {
     }
 
     const oldNJOP = Number(taxObject.njop || 0);
-    const newNJOPVal = parseFloat(newNJOP);
+    const newNJOPVal = Number(newNJOP);
 
     // Create the assessment record
     const assessment = await prisma.taxAssessment.create({

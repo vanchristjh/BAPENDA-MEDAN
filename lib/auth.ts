@@ -26,6 +26,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
+        if (user.isActive === false || user.deletedAt) {
+          throw new Error("Invalid credentials");
+        }
+
         // Proper bcrypt password comparison
         const bcrypt = await import("bcryptjs");
         const isValid = await bcrypt.compare(credentials.password, user.password);

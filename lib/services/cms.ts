@@ -12,6 +12,7 @@ export class CMSService {
       where: activeOnly ? { isActive: true } : {},
       orderBy: { createdAt: "desc" },
       include: { author: { select: { name: true } } },
+      take: 100,
     });
   }
 

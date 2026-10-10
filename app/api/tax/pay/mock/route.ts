@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NotificationService } from "@/lib/services/notification";
 import { AuditService } from "@/lib/services/audit";
+import { z } from "zod";
+
+const MockPaySchema = z.object({ paymentId: z.string().min(1).max(100) });
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,10 +15,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { paymentId } = await req.json();
-    if (!paymentId) {
-      return NextResponse.json({ error: "paymentId wajib diisi" }, { status: 400 });
+    const parsed = MockPaySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "paymentId wajib diisi", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { paymentId } = parsed.data;
 
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
@@ -27,6 +31,10 @@ export async function POST(req: NextRequest) {
 
     if (payment.status === "PAID") {
       return NextResponse.json({ error: "Tagihan sudah dibayar" }, { status: 400 });
+    }
+
+    if (payment.userId !== session.user.id) {
+      return NextResponse.json({ error: "Tagihan bukan milik Anda" }, { status: 403 });
     }
 
     const updatedPayment = await prisma.payment.update({

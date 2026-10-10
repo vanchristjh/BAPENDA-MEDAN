@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session || !["ADMIN", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     const recordId = searchParams.get("recordId") || undefined;
     const startDateStr = searchParams.get("startDate");
     const endDateStr = searchParams.get("endDate");
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0"));
 
     const startDate = startDateStr ? new Date(startDateStr) : undefined;
     const endDate = endDateStr ? new Date(endDateStr) : undefined;

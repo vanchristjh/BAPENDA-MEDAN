@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -22,10 +22,13 @@ export async function GET() {
             status: true,
             taxPeriod: true,
             createdAt: true,
-          }
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
         }
       },
       orderBy: { createdAt: "desc" },
+      take: 500,
     });
 
     return NextResponse.json(objects);

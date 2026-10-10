@@ -4,6 +4,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const SubmissionSchema = z.object({
+  type: z.enum(["KEBERATAN", "PERUBAHAN"]),
+  title: z.string().min(5).max(200),
+  description: z.string().min(20).max(5000),
+  documentUrl: z.string().max(500).optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +28,7 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, Math.max(5, parseInt(searchParams.get("limit") || "20")));
     const skip = (page - 1) * limit;
 
-    let whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
 
     if (session.user.role === "USER" || session.user.role === "MAHASISWA") {
       whereClause.userId = session.user.id;
@@ -80,15 +88,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { type, title, description, documentUrl } = await req.json();
-
-    if (!type || !title || !description) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const parsed = SubmissionSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
-
-    if (!["KEBERATAN", "PERUBAHAN"].includes(type)) {
-      return NextResponse.json({ error: "Tipe pengajuan tidak valid" }, { status: 400 });
-    }
+    const { type, title, description, documentUrl } = parsed.data;
 
     // Generate unique ticket number
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -119,7 +123,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const admins = await prisma.user.findMany({ where: { role: { in: ["ADMIN", "OFFICER"] } }, select: { id: true } });
+    const admins = await prisma.user.findMany({ where: { role: { in: ["ADMIN", "OFFICER"] } }, select: { id: true }, take: 100 });
     for (const admin of admins) {
       await NotificationService.notify({
         userId: admin.id,

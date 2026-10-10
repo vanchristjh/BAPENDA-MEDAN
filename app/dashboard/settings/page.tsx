@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { Settings, User, Lock, Save, Camera, ShieldCheck, Mail, Phone, MapPin, Fingerprint, History, CheckCircle } from "lucide-react";
+import { User, Lock, Save, Camera, ShieldCheck, Mail, Phone, MapPin, Fingerprint, History, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/lib/hooks/use-toast";

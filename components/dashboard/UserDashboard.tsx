@@ -7,20 +7,14 @@ import {
   Building2, 
   CreditCard, 
   ArrowRight,
-  Calculator,
   Megaphone,
   Loader2,
-  Clock,
-  History,
   FileBadge,
-  Receipt,
   FilePenLine,
   MessageSquareWarning,
-  Info,
   CheckCircle2,
   XCircle,
-  AlertCircle,
-  ShieldCheck
+  AlertCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -126,7 +120,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20 selection:bg-[#1E40AF]/20 text-left bg-[#F8FAFC]">
       
       {/* ── User Welcome Hub ── */}
-      <section className="relative bg-white border border-zinc-150 rounded-[2rem] p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
+      <section className="relative bg-white border border-zinc-150 rounded-lg p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
          <div className="relative z-10 space-y-4 max-w-2xl">
             <div className="flex items-center gap-2">
                <div className="w-2.5 h-2.5 bg-[#1E40AF] rounded-full animate-pulse" />
@@ -153,7 +147,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
 
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Tagihan Aktif */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Tagihan Aktif</p>
                   <h4 className="text-xl font-black text-[#EF4444] leading-tight">{formatCurrency(totalPendingAmount)}</h4>
@@ -165,7 +159,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* Total Aset Pajak */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Total Aset Pajak</p>
                   <h4 className="text-xl font-black text-foreground leading-tight">{assets.length} Objek</h4>
@@ -177,7 +171,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* SPPT Aktif */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">SPPT Aktif</p>
                   <h4 className="text-xl font-black text-foreground leading-tight">{spptCount} Dokumen</h4>
@@ -189,7 +183,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* Pengajuan Berjalan */}
-            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem]">
+            <Card padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md">
                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Pengajuan Berjalan</p>
                   <h4 className="text-xl font-black text-foreground leading-tight">{submissionActiveCount} Pengajuan</h4>
@@ -237,7 +231,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
          {/* Simple Table Column */}
          <div className="lg:col-span-8 space-y-4 text-left">
-            <Card padding="none" className="bg-white border border-zinc-150 rounded-[1.5rem] overflow-hidden shadow-sm">
+            <Card padding="none" className="bg-white border border-zinc-150 overflow-hidden shadow-sm">
                <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
                   <h3 className="text-base font-black uppercase text-zinc-800">Riwayat Transaksi</h3>
                   <Link href="/dashboard/pajak/riwayat">
@@ -259,7 +253,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
                      <tbody className="divide-y divide-zinc-150">
                         {payments.length === 0 ? (
                            <tr>
-                              <td colSpan={4} className="px-6 py-12 text-center text-zinc-400 italic">Belum ada riwayat transaksi.</td>
+                              <td colSpan={4} className="px-6 py-12 text-center text-zinc-400 italic">Belum ada riwayat transaksi. <span className="font-medium text-[1E40AF] hover:underline">Ajukan pembayaran pertama Anda.</span></td>
                            </tr>
                         ) : (
                            payments.slice(0, 5).map((pay) => (
@@ -292,7 +286,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
 
          {/* Submission Status Column */}
          <div className="lg:col-span-4 flex flex-col gap-6">
-            <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm flex flex-col justify-between">
+            <Card padding="md" className="bg-white border border-zinc-150 shadow-sm flex flex-col justify-between">
                <div className="space-y-6">
                   <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                      <FilePenLine className="w-5 h-5 text-[#1E40AF]" />
@@ -356,7 +350,7 @@ export const UserDashboard = ({ session }: { session: Session }) => {
          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {announcements.length > 0 ? (
                announcements.map((ann) => (
-                  <Card key={ann.id} padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm flex flex-col justify-between gap-4 transition-all hover:shadow-md">
+                  <Card key={ann.id} padding="md" className="bg-white border border-zinc-150 shadow-sm flex flex-col justify-between gap-4 transition-all hover:shadow-md">
                      <div className="space-y-2">
                         <div className="flex items-center gap-2 text-[#1E40AF]">
                            <Megaphone className="w-4 h-4" />
@@ -374,8 +368,8 @@ export const UserDashboard = ({ session }: { session: Session }) => {
                   </Card>
                ))
             ) : (
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm col-span-3 py-10 text-center text-zinc-400 italic">
-                  Belum ada pengumuman bulletin terbaru.
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm col-span-3 py-10 text-center text-zinc-400 italic">
+                  <p className="text-zinc-500">Belum ada pengumuman bulletin terbaru. <a href="/informasi" className="text-[1E40AF] font-medium hover:underline">Lihat semua informasi.</a></p>
                </Card>
             )}
          </div>

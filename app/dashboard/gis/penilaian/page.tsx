@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Scale, TrendingUp, TrendingDown, Clock, Search, HelpCircle, Save, Plus, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
+import { Scale, Clock, Search, HelpCircle, Save, Plus, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -54,18 +54,13 @@ interface Analytics {
   }>;
 }
 
+type SessionRole = { role?: string };
+
 export default function GeoPenilaianPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      const role = (session?.user as any)?.role;
-      if (role !== "ADMIN" && role !== "OFFICER") {
-        router.replace("/dashboard");
-      }
-    }
-  }, [session, status, router]);
+  const userRole = (session?.user as SessionRole | undefined)?.role;
+  const isAuthorized = userRole === "ADMIN" || userRole === "OFFICER" || userRole === "DEVELOPER";
 
   const { toast } = useToast();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -79,9 +74,7 @@ export default function GeoPenilaianPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const loadData = useCallback(() => {
-    if (status !== "authenticated") return;
-    const role = (session?.user as any)?.role;
-    if (role !== "ADMIN" && role !== "OFFICER") return;
+    if (status !== "authenticated" || !isAuthorized) return;
     Promise.all([
       fetch("/api/geodashboard/object-tax").then(res => res.json()),
       fetch("/api/gis/assessments").then(res => res.json())
@@ -96,13 +89,25 @@ export default function GeoPenilaianPage() {
         console.error(err);
         setLoading(false);
       });
-  }, [status, session]);
+  }, [status, isAuthorized]);
+
+  useEffect(() => {
+    if (status === "authenticated" && !isAuthorized) {
+      router.replace("/dashboard");
+    }
+  }, [status, isAuthorized, router]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  if (status === "loading" || ((session?.user as any)?.role !== "ADMIN" && (session?.user as any)?.role !== "OFFICER")) {
+  const filteredObjects = useMemo(() => {
+    return searchQuery
+      ? objects.filter(o => o.nop.includes(searchQuery) || o.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : objects.slice(0, 5);
+  }, [objects, searchQuery]);
+
+  if (status === "loading" || !isAuthorized) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
@@ -145,12 +150,6 @@ export default function GeoPenilaianPage() {
     setNewNjopInput(String(obj.njop));
     setReasonInput("");
   };
-
-  const filteredObjects = useMemo(() => {
-    return searchQuery
-      ? objects.filter(o => o.nop.includes(searchQuery) || o.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      : objects.slice(0, 5);
-  }, [objects, searchQuery]);
 
   if (loading) {
     return (

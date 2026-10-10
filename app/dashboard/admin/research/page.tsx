@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   GraduationCap, 
   Search, 
@@ -50,7 +50,7 @@ export default function AdminResearchPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ResearchRequest | null>(null);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/research");
@@ -61,11 +61,11 @@ export default function AdminResearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   const handleReview = async (id: string, status: "APPROVED" | "REJECTED") => {
     setSubmitting(true);

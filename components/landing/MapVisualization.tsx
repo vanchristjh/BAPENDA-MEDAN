@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { MapPin, Info, TrendingUp, AlertCircle, CheckCircle2, Star, ShieldCheck, ArrowRight } from "lucide-react";
+import { MapPin, Info, TrendingUp, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";

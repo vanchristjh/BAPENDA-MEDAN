@@ -62,17 +62,8 @@ export const DashboardSidebar = () => {
 
   const role = (session?.user as { role: string })?.role ?? "USER";
 
-  const getDashboardIcon = () => {
-    if (role === "ADMIN" || role === "OFFICER") {
-      return LayoutDashboard;
-    }
-    return Home;
-  };
-
-  const DashboardIcon = getDashboardIcon();
-
   const getNavGroups = (): NavGroup[] => {
-    if (role === "ADMIN") {
+    if (role === "ADMIN" || role === "DEVELOPER") {
       return [
         {
           label: "DATA PAJAK",
@@ -235,7 +226,7 @@ export const DashboardSidebar = () => {
           </div>
 
           {/* Global Search Bar (Admin & Officer only) */}
-          {(role === "ADMIN" || role === "OFFICER") && (
+          {(role === "ADMIN" || role === "OFFICER" || role === "DEVELOPER") && (
             <div className="mb-4 relative px-2">
                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                <input 
@@ -267,7 +258,11 @@ export const DashboardSidebar = () => {
                     : "text-zinc-500 hover:text-[#1E40AF] hover:bg-[#1E40AF]/5"
                 )}
               >
-                <DashboardIcon className={cn("w-5 h-5 transition-transform group-hover:scale-110", isDashboardActive ? "text-white" : "text-zinc-400 group-hover:text-[#1E40AF]")} />
+                {(role === "ADMIN" || role === "OFFICER" || role === "DEVELOPER") ? (
+                  <LayoutDashboard className={cn("w-5 h-5 transition-transform group-hover:scale-110", isDashboardActive ? "text-white" : "text-zinc-400 group-hover:text-[#1E40AF]")} />
+                ) : (
+                  <Home className={cn("w-5 h-5 transition-transform group-hover:scale-110", isDashboardActive ? "text-white" : "text-zinc-400 group-hover:text-[#1E40AF]")} />
+                )}
                 <span className="uppercase tracking-tight">Dashboard</span>
               </Link>
             </div>
@@ -381,7 +376,7 @@ export const DashboardTopbar = () => {
                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDropdownOpen(false)} />
                    
                    {/* Dropdown Card */}
-                   <div className="absolute right-0 mt-3 w-60 bg-white border border-zinc-150 rounded-[1.5rem] shadow-2xl py-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                   <div className="absolute right-0 mt-3 w-60 bg-white border border-zinc-150 rounded-lg shadow-2xl py-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="px-6 py-2.5 border-b border-zinc-100 mb-2">
                          <p className="text-xs font-black text-zinc-800 uppercase truncate">{session?.user?.name ?? "User"}</p>
                          <p className="text-[9px] font-mono text-zinc-400 truncate mt-0.5">{session?.user?.email ?? ""}</p>

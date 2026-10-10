@@ -21,7 +21,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleForgot = async () => {
+    if (!email || !email.includes("@")) {
+      toast("Info", "Isi email valid dulu, lalu klik Lupa Sandi.", "info");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal");
+      toast("Berhasil", data.message || "Permintaan reset dicatat.", "success");
+    } catch {
+      toast("Gagal", "Permintaan reset gagal. Hubungi admin.", "error");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +61,10 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Kredensial tidak valid. Silakan periksa kembali email dan kata sandi Anda.");
       } else {
-        router.push("/dashboard");
+        const params = new URLSearchParams(window.location.search);
+        const cb = params.get("callbackUrl");
+        const safe = cb && cb.startsWith("/") && !cb.startsWith("//") ? cb : "/dashboard";
+        router.push(safe);
       }
     } catch {
       setError("Terjadi kesalahan sistem. Silakan coba beberapa saat lagi.");
@@ -138,7 +164,7 @@ export default function LoginPage() {
                                required
                                className="w-full pl-16 pr-8 h-16 bg-zinc-50 border border-zinc-200 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all font-black text-sm tracking-widest shadow-inner"
                             />
-                            <button type="button" onClick={() => toast("Info", "Fitur reset password akan segera tersedia. Hubungi admin untuk bantuan.", "info")} className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-primary hover:underline italic z-10 cursor-pointer">Lupa Sandi?</button>
+                            <button type="button" onClick={handleForgot} disabled={forgotLoading} className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-primary hover:underline italic z-10 cursor-pointer disabled:opacity-50">{forgotLoading ? "Mengirim..." : "Lupa Sandi?"}</button>
                          </div>
                       </div>
                   </div>

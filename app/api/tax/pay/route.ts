@@ -5,7 +5,9 @@ import { authOptions } from "@/lib/auth";
 
 import { PaymentService } from "@/lib/services/payment";
 import { AuditService } from "@/lib/services/audit";
-import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const PaySchema = z.object({ paymentId: z.string().min(1).max(100) });
 
 // GET /api/tax/pay — list user payments
 export async function GET() {
@@ -17,6 +19,7 @@ export async function GET() {
       where: { userId: session.user.id },
       include: { taxObject: { select: { nop: true, type: true, name: true, address: true, njop: true } } },
       orderBy: { createdAt: "desc" },
+      take: 100,
     });
 
     return NextResponse.json({ payments });
@@ -32,8 +35,11 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { paymentId } = await req.json();
-    if (!paymentId) return NextResponse.json({ error: "paymentId wajib diisi" }, { status: 400 });
+    const parsed = PaySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "paymentId wajib diisi", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { paymentId } = parsed.data;
 
     const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { userId: true, invoiceNumber: true } });
     if (!payment) return NextResponse.json({ error: "Tagihan tidak ditemukan" }, { status: 404 });

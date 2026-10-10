@@ -101,7 +101,7 @@ export const MahasiswaDashboard = ({ session }: { session: Session }) => {
 
          {/* ── Progress Ledger Grid ── */}
          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-[3.5rem] p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left">
+            <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-2xl p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left">
                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-125 transition-transform duration-1000">
                   <GraduationCap className="w-40 h-40 text-primary" />
                </div>
@@ -122,7 +122,7 @@ export const MahasiswaDashboard = ({ session }: { session: Session }) => {
                </div>
             </Card>
 
-            <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-[3.5rem] p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left text-left">
+            <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-2xl p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left">
                <div className="space-y-10 relative z-10">
                   <div className="flex items-center gap-3 px-6 py-2 bg-zinc-50 rounded-full border border-zinc-100 w-fit">
                      <div className="w-2 h-2 bg-zinc-400 rounded-full" />
@@ -137,7 +137,7 @@ export const MahasiswaDashboard = ({ session }: { session: Session }) => {
             </Card>
 
             {/* Latest Announcement Mini Card */}
-            <Card padding="none" variant="elevated" className="bg-primary text-white border-zinc-100 rounded-[3.5rem] p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left">
+            <Card padding="none" variant="elevated" className="bg-primary text-white border-zinc-100 rounded-2xl p-10 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all group overflow-hidden relative shadow-xl shadow-primary/5 min-h-[240px] text-left">
                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
                   <Megaphone className="w-40 h-40" />
                </div>
@@ -156,7 +156,7 @@ export const MahasiswaDashboard = ({ session }: { session: Session }) => {
 
          {/* ── Research Activity Chart ── */}
          <section>
-            <Card padding="lg" variant="elevated" className="bg-white border-zinc-100 rounded-[5rem] shadow-2xl shadow-primary/5 p-16 md:p-24 relative overflow-hidden group">
+            <Card padding="lg" variant="elevated" className="bg-white border-zinc-100 rounded-3xl shadow-2xl shadow-primary/5 p-16 md:p-24 relative overflow-hidden group">
                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[80px] -z-10 group-hover:scale-110 transition-transform duration-[2000ms]" />
                <PremiumChart 
                   subtitle="Academic Engagement Index"
@@ -176,7 +176,7 @@ export const MahasiswaDashboard = ({ session }: { session: Session }) => {
          {/* ── Status Registry ── */}
          <section className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="lg:col-span-12 group">
-               <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-[5rem] overflow-hidden shadow-2xl shadow-primary/5 p-12 md:p-20 relative min-h-[500px]">
+               <Card padding="none" variant="elevated" className="bg-white border-zinc-100 rounded-3xl overflow-hidden shadow-2xl shadow-primary/5 p-12 md:p-20 relative min-h-[500px]">
                   <div className="flex items-center justify-between mb-16 border-b border-zinc-50 pb-8 text-left">
                      <div className="space-y-3">
                         <h2 className="text-3xl font-black italic tracking-tighter uppercase italic leading-none">Status <span className="text-primary">Riset Saya.</span></h2>

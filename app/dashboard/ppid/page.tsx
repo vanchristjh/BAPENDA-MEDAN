@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   FileQuestion, Plus, CheckCircle, Clock, XCircle,
-  X, Loader2, AlertCircle, ChevronRight, MessageSquare,
-  ShieldCheck, Star, Send, ArrowRight, User as UserIcon, ChevronDown
+  X, Loader2, AlertCircle, MessageSquare,
+  ShieldCheck, ArrowRight, User as UserIcon, ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
@@ -54,13 +54,13 @@ export default function PPIDPage() {
   const [selectedRequest, setSelectedRequest] = useState<PPIDRequest | null>(null);
   
   const role = (session?.user as { role: string })?.role ?? "USER";
-  const isAdminOrOfficer = ["ADMIN", "OFFICER"].includes(role);
+  const isAdminOrOfficer = ["ADMIN", "OFFICER", "DEVELOPER"].includes(role);
 
   const [form, setForm] = useState({
     title: "", description: "", informationType: "DOKUMEN", urgency: "NORMAL",
   });
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/ppid");
@@ -71,11 +71,11 @@ export default function PPIDPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,9 +166,9 @@ export default function PPIDPage() {
 
          <div className="grid grid-cols-1 gap-12 px-4">
             {loading ? (
-               [1, 2].map(i => <div key={i} className="h-60 bg-zinc-50 border border-zinc-100 rounded-[4rem] animate-pulse" />)
+               [1, 2].map(i => <div key={i} className="h-60 bg-zinc-50 border border-zinc-100 rounded-3xl animate-pulse" />)
             ) : requests.length === 0 ? (
-               <div className="py-32 text-center bg-white border-2 border-dashed border-zinc-100 rounded-[5rem] group hover:border-primary/20 transition-all shadow-inner">
+               <div className="py-32 text-center bg-white border-2 border-dashed border-zinc-100 rounded-3xl group hover:border-primary/20 transition-all shadow-inner">
                   <FileQuestion className="w-20 h-20 text-zinc-100 mx-auto mb-8" />
                   <p className="text-xl font-black italic tracking-tighter text-zinc-300 uppercase italic">Repository Empty — No Tickets Logged.</p>
                </div>
@@ -179,11 +179,11 @@ export default function PPIDPage() {
                   const isResponding = activeRespon === r.id;
 
                   return (
-                    <div key={r.id} className="bg-white border border-zinc-100 rounded-[4rem] p-10 lg:p-14 hover:shadow-[0_50px_100px_-20px_rgba(37,99,235,0.08)] hover:scale-[1.01] transition-all duration-700 shadow-xl shadow-primary/[0.03] group relative overflow-hidden flex flex-col gap-10">
+                    <div key={r.id} className="bg-white border border-zinc-100 rounded-3xl p-10 lg:p-14 hover:shadow-[0_50px_100px_-20px_rgba(37,99,235,0.08)] hover:scale-[1.01] transition-all duration-700 shadow-xl shadow-primary/[0.03] group relative overflow-hidden flex flex-col gap-10">
                        <div className="absolute top-0 left-0 w-2 h-full bg-primary/10" />
                        
                        <div className="flex flex-col md:flex-row md:items-start gap-12">
-                          <div className="w-20 h-20 shrink-0 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] flex items-center justify-center shadow-inner group-hover:rotate-6 transition-transform">
+                          <div className="w-20 h-20 shrink-0 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-center shadow-inner group-hover:rotate-6 transition-transform">
                              <FileQuestion className={cn("w-10 h-10", sc.color.split(" ")[0])} />
                           </div>
 
@@ -207,7 +207,7 @@ export default function PPIDPage() {
                              </div>
 
                              {r.response && (
-                                <div className="mt-10 bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-10 animate-in fade-in duration-500 relative overflow-hidden group/reply">
+                                <div className="mt-10 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-10 animate-in fade-in duration-500 relative overflow-hidden group/reply">
                                    <div className="absolute top-0 right-0 p-8 opacity-5 -z-0 group-hover/reply:scale-125 transition-transform duration-1000">
                                       <MessageSquare className="w-24 h-24 text-emerald-600" />
                                    </div>
@@ -224,14 +224,14 @@ export default function PPIDPage() {
                              {canRespond && (
                                 <div className="mt-8 border-t border-zinc-50 pt-10">
                                    {!isResponding ? (
-                                      <Button onClick={() => setActiveRespon(r.id)} className="h-16 rounded-[2rem] px-10 btn-premium flex items-center gap-3 font-black uppercase text-[10px] tracking-widest shadow-xl">
+                                      <Button onClick={() => setActiveRespon(r.id)} className="h-16 rounded-xl px-10 btn-premium flex items-center gap-3 font-black uppercase text-[10px] tracking-widest shadow-xl">
                                          Kirim Tanggapan PPID <ArrowRight className="w-4 h-4" />
                                       </Button>
                                    ) : (
                                       <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
                                          <textarea 
                                           rows={4}
-                                          className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
+                                          className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
                                           placeholder="Tuliskan respon resmi permohonan informasi..."
                                           value={responContent}
                                           onChange={e => setResponContent(e.target.value)}
@@ -268,7 +268,7 @@ export default function PPIDPage() {
       {/* ── Detail Modal ── */}
        {selectedRequest && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-6 animate-in fade-in duration-300 text-left">
-            <Card padding="none" className="bg-white rounded-[3rem] shadow-2xl w-full max-w-lg border border-zinc-100 animate-in zoom-in-95 duration-300 relative p-8">
+            <Card padding="none" className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-zinc-100 animate-in zoom-in-95 duration-300 relative p-8">
                <div className="flex items-start justify-between mb-6">
                   <div>
                      <span className="text-[10px] font-black uppercase text-zinc-400">Rincian Permohonan Informasi</span>
@@ -346,7 +346,7 @@ export default function PPIDPage() {
       {/* ── Submit Modal (For User) ── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-6 animate-in fade-in duration-500 text-left">
-           <Card padding="none" className="bg-white rounded-[5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-16">
+           <Card padding="none" className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative p-12 lg:p-16">
               <div className="flex items-start justify-between mb-12">
                  <div className="space-y-3">
                     <h2 className="text-4xl font-black italic tracking-tighter uppercase italic leading-none">Ajukan <span className="text-primary italic">Informasi.</span></h2>
@@ -360,7 +360,7 @@ export default function PPIDPage() {
                     <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Judul Permohonan</label>
                     <input 
                       required 
-                      className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
+                      className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-xs uppercase tracking-widest italic shadow-inner"
                       placeholder="Apa informasi yang Anda ingin tanyakan?" 
                       value={form.title}
                       onChange={e => setForm({...form, title: e.target.value})}
@@ -370,7 +370,7 @@ export default function PPIDPage() {
                     <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Grup Informasi</label>
                     <div className="relative">
                        <select
-                         className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-[10px] uppercase tracking-[0.2em] italic shadow-inner appearance-none cursor-pointer"
+                         className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-[10px] uppercase tracking-[0.2em] italic shadow-inner appearance-none cursor-pointer"
                          value={form.informationType}
                          onChange={e => setForm({...form, informationType: e.target.value})}
                        >
@@ -383,7 +383,7 @@ export default function PPIDPage() {
                     <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Deskripsi Narasi</label>
                     <textarea 
                       required rows={5} 
-                      className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-[3.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
+                      className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-3xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
                       placeholder="Jelaskan kebutuhan data Anda secara spesifik..." 
                       value={form.description}
                       onChange={e => setForm({...form, description: e.target.value})}
@@ -409,7 +409,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
     emerald: "text-emerald-500 bg-emerald-50",
   };
   return (
-    <Card padding="lg" className="bg-white border-zinc-100 rounded-[2.5rem] shadow-xl shadow-primary/[0.03] text-left hover:scale-[1.05] transition-all group overflow-hidden relative">
+    <Card padding="lg" className="bg-white border-zinc-100 rounded-2xl shadow-xl shadow-primary/[0.03] text-left hover:scale-[1.05] transition-all group overflow-hidden relative">
        <div className={cn("absolute inset-0 opacity-10 -z-0", colors[color].split(" ")[1])} />
        <p className={cn("text-5xl font-black italic tracking-tighter leading-none relative z-10", colors[color].split(" ")[0])}>{value}</p>
        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-4 relative z-10 italic">{label}</p>

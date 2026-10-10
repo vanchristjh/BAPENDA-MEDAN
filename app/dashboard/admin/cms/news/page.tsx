@@ -22,13 +22,14 @@ export default function AdminNewsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
+    if (status === "authenticated" && !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
       router.replace("/dashboard");
     }
   }, [session, status, router]);
 
   const { toast } = useToast();
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
@@ -44,7 +45,7 @@ export default function AdminNewsPage() {
   });
 
   const fetchNews = useCallback(async () => {
-    if (status !== "authenticated" || (session?.user as any)?.role !== "ADMIN") return;
+    if (status !== "authenticated" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) return;
     setLoading(true);
     try {
       const res = await fetch("/api/cms/news");
@@ -62,7 +63,7 @@ export default function AdminNewsPage() {
     fetchNews();
   }, [fetchNews]);
 
-  if (status === "loading" || (session?.user as any)?.role !== "ADMIN") {
+  if (status === "loading" || !["ADMIN", "DEVELOPER"].includes((session?.user as { role?: string })?.role ?? "")) {
      return (
         <div className="min-h-[60vh] flex items-center justify-center">
            <Loader2 className="w-12 h-12 text-[#1E40AF] animate-spin" />
@@ -142,7 +143,7 @@ export default function AdminNewsPage() {
         </div>
         <button
           onClick={() => { setEditingItem(null); setForm({ title: "", summary: "", content: "", category: "Pajak", isActive: true }); setShowModal(true); }}
-          className="btn-premium flex items-center gap-4 px-12 py-6 bg-primary text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/30 group self-start lg:self-auto"
+          className="btn-premium flex items-center gap-4 px-12 py-6 bg-primary text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/30 group self-start lg:self-auto"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Tambah Berita Baru
         </button>
@@ -151,31 +152,33 @@ export default function AdminNewsPage() {
       {/* ── List Section ── */}
       <div className="space-y-8 pt-10 px-4">
          <div className="relative group">
-            <div className="absolute inset-0 bg-primary/5 rounded-[2.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity -z-10" />
+            <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity -z-10" />
             <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-6 h-6 text-zinc-300 group-focus-within:text-primary transition-colors" />
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari Judul Berita atau Naskah..."
-              className="w-full pl-22 pr-10 h-22 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] outline-none shadow-inner focus:bg-white focus:border-primary/20 transition-all font-black text-lg tracking-tight italic"
+              className="w-full pl-22 pr-10 h-22 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none shadow-inner focus:bg-white focus:border-primary/20 transition-all font-black text-lg tracking-tight italic"
             />
          </div>
          
          <div className="grid grid-cols-1 gap-8">
             {loading ? (
               [1, 2, 3].map((i) => (
-                <div key={i} className="h-40 bg-zinc-50 rounded-[4rem] animate-pulse border border-zinc-100" />
+                <div key={i} className="h-40 bg-zinc-50 rounded-3xl animate-pulse border border-zinc-100" />
               ))
-            ) : news.length === 0 ? (
-              <div className="py-24 text-center bg-white rounded-[4rem] border-2 border-dashed border-zinc-100 group hover:border-primary/20 transition-all shadow-inner">
+            ) : news.filter((n) => `${n.title} ${n.summary}`.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+              <div className="py-24 text-center bg-white rounded-3xl border-2 border-dashed border-zinc-100 group hover:border-primary/20 transition-all shadow-inner">
                 <FileText className="w-20 h-20 mx-auto text-zinc-100 mb-6" />
                 <p className="text-xl font-black italic tracking-tighter text-zinc-300 uppercase italic">Ledger Kosong — No News Logged.</p>
               </div>
             ) : (
-              news.map((item) => (
-                <div key={item.id} className="bg-white border border-zinc-100 rounded-[4rem] p-10 lg:p-14 hover:shadow-[0_50px_100px_-20px_rgba(37,99,235,0.1)] hover:scale-[1.01] transition-all duration-700 shadow-xl shadow-primary/[0.03] group relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12 text-left">
+              news.filter((n) => `${n.title} ${n.summary}`.toLowerCase().includes(search.toLowerCase())).map((item) => (
+                <div key={item.id} className="bg-white border border-zinc-100 rounded-3xl p-10 lg:p-14 hover:shadow-[0_50px_100px_-20px_rgba(37,99,235,0.1)] hover:scale-[1.01] transition-all duration-700 shadow-xl shadow-primary/[0.03] group relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12 text-left">
                   <div className="absolute top-0 left-0 w-2 h-full bg-primary/10" />
                   <div className="flex flex-col md:flex-row items-center gap-10 flex-1 relative z-10 w-full md:w-auto">
-                    <div className="w-24 h-24 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] flex items-center justify-center font-black text-3xl italic tracking-tighter text-zinc-400 shadow-inner group-hover:rotate-6 transition-transform">
+                    <div className="w-24 h-24 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-center font-black text-3xl italic tracking-tighter text-zinc-400 shadow-inner group-hover:rotate-6 transition-transform">
                        <FileText className="w-10 h-10 text-primary opacity-20" />
                     </div>
                     
@@ -203,13 +206,13 @@ export default function AdminNewsPage() {
                   <div className="flex items-center gap-4 relative z-10">
                      <button 
                       onClick={() => handleEdit(item)}
-                      className="p-5 hover:bg-primary hover:text-white text-zinc-400 bg-zinc-50 border border-zinc-100 rounded-[2rem] transition-all shadow-inner"
+                      className="p-5 hover:bg-primary hover:text-white text-zinc-400 bg-zinc-50 border border-zinc-100 rounded-xl transition-all shadow-inner"
                      >
                       <Edit className="w-6 h-6" />
                      </button>
                      <button 
                       onClick={() => handleDelete(item.id)}
-                      className="p-5 hover:bg-red-600 hover:text-white text-red-600 bg-red-50 border border-red-100 rounded-[2rem] transition-all shadow-inner"
+                      className="p-5 hover:bg-red-600 hover:text-white text-red-600 bg-red-50 border border-red-100 rounded-xl transition-all shadow-inner"
                      >
                       <Trash2 className="w-6 h-6" />
                      </button>
@@ -224,7 +227,7 @@ export default function AdminNewsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 text-left">
            <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-md animate-in fade-in duration-500" onClick={() => setShowModal(false)} />
-           <div className="bg-white rounded-[4rem] shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative z-10 p-12 lg:p-16">
+           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto border border-zinc-100 animate-in zoom-in-95 duration-500 relative z-10 p-12 lg:p-16">
               <div className="flex items-start justify-between mb-12">
                  <div className="space-y-4">
                     <div className="flex items-center gap-3 text-primary">
@@ -233,11 +236,11 @@ export default function AdminNewsPage() {
                     </div>
                     <h2 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase italic leading-none">{editingItem ? "Update" : "Publikasi"} <span className="text-primary italic">Berita.</span></h2>
                  </div>
-                 <button onClick={() => setShowModal(false)} className="p-5 bg-zinc-50 text-zinc-400 rounded-[2rem] hover:bg-zinc-100 transition-all shadow-inner"><X className="w-6 h-6" /></button>
+                 <button onClick={() => setShowModal(false)} className="p-5 bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-100 transition-all shadow-inner"><X className="w-6 h-6" /></button>
               </div>
 
               {error && (
-                <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-[2.5rem] text-red-600 text-[10px] font-black uppercase tracking-widest italic shadow-inner">
+                <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest italic shadow-inner">
                   Alert: {error}
                 </div>
               )}
@@ -248,7 +251,7 @@ export default function AdminNewsPage() {
                       <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Headline Utama</label>
                       <input
                         type="text"
-                        className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-sm tracking-tight italic shadow-inner"
+                        className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-black text-sm tracking-tight italic shadow-inner"
                         placeholder="Contoh: Optimalisasi PAD Kota Medan Tahun 2026..."
                         value={form.title}
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -259,7 +262,7 @@ export default function AdminNewsPage() {
                       <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Grup Kategori</label>
                       <div className="relative">
                         <select
-                          className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-[10px] uppercase tracking-[0.2em] italic shadow-inner appearance-none cursor-pointer"
+                          className="w-full pl-8 pr-12 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-black text-[10px] uppercase tracking-[0.2em] italic shadow-inner appearance-none cursor-pointer"
                           value={form.category}
                           onChange={(e) => setForm({ ...form, category: e.target.value })}
                         >
@@ -277,7 +280,7 @@ export default function AdminNewsPage() {
                    <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Ringkasan Eksekutif</label>
                    <textarea
                      rows={3}
-                     className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
+                     className="w-full px-8 py-6 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
                      placeholder="Tuliskan intisari berita untuk feed landing page..."
                      value={form.summary}
                      onChange={(e) => setForm({ ...form, summary: e.target.value })}
@@ -289,7 +292,7 @@ export default function AdminNewsPage() {
                    <label className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 italic pl-6 leading-none">Narasi Berita Lengkap</label>
                    <textarea
                      rows={10}
-                     className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
+                     className="w-full px-8 py-8 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium italic text-sm shadow-inner resize-none"
                      placeholder="Tuliskan isi berita secara detail..."
                      value={form.content}
                      onChange={(e) => setForm({ ...form, content: e.target.value })}

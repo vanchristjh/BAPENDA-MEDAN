@@ -4,6 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const StatusSchema = z.object({
+  status: z.enum(["PENDING", "VERIFIED", "REJECTED", "ACTIVE"]),
+});
 
 export async function PATCH(
   req: NextRequest,
@@ -12,12 +17,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { status } = body;
+    const parsed = StatusSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Status tidak valid", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { status } = parsed.data;
 
     const oldObject = await prisma.taxObject.findUnique({ where: { id } });
     

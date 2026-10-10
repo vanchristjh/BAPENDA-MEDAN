@@ -5,28 +5,23 @@ import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const PasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8).max(100).regex(/[A-Z]/, "Password harus mengandung minimal 1 huruf kapital").regex(/[a-z]/, "Password harus mengandung minimal 1 huruf kecil").regex(/[0-9]/, "Password harus mengandung minimal 1 angka"),
+});
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { currentPassword, newPassword } = await req.json();
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json({ error: "Kedua field wajib diisi" }, { status: 400 });
+    const parsed = PasswordSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
-    if (newPassword.length < 8) {
-      return NextResponse.json({ error: "Password baru minimal 8 karakter" }, { status: 400 });
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      return NextResponse.json({ error: "Password harus mengandung minimal 1 huruf kapital" }, { status: 400 });
-    }
-    if (!/[a-z]/.test(newPassword)) {
-      return NextResponse.json({ error: "Password harus mengandung minimal 1 huruf kecil" }, { status: 400 });
-    }
-    if (!/[0-9]/.test(newPassword)) {
-      return NextResponse.json({ error: "Password harus mengandung minimal 1 angka" }, { status: 400 });
-    }
+    const { currentPassword, newPassword } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     if (!user?.password) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });

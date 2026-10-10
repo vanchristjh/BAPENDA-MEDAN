@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Users, Building2, FileText, CreditCard, Clock, ShieldCheck, Scale, Activity, ArrowRight, Bell, RefreshCw } from "lucide-react";
+import { Users, Building2, FileText, Clock, Activity, ArrowRight, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { PremiumChart } from "@/components/ui/PremiumChart";
@@ -85,7 +85,7 @@ export default function PortalIntegrasiPage() {
 
       {/* Primary Integration Counters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
           <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center shrink-0">
             <Users className="w-6 h-6" />
           </div>
@@ -95,7 +95,7 @@ export default function PortalIntegrasiPage() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center shrink-0">
             <Building2 className="w-6 h-6" />
           </div>
@@ -105,7 +105,7 @@ export default function PortalIntegrasiPage() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
           <div className="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center shrink-0">
             <FileText className="w-6 h-6" />
           </div>
@@ -115,7 +115,7 @@ export default function PortalIntegrasiPage() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border border-zinc-100 rounded-[2rem] shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
+        <Card className="p-6 bg-white border border-zinc-100 rounded-xl shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-primary/10 transition-colors">
           <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shrink-0">
             <Clock className="w-6 h-6" />
           </div>
@@ -128,7 +128,7 @@ export default function PortalIntegrasiPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main analytical chart */}
-        <Card className="lg:col-span-2 p-10 bg-white border border-zinc-100 rounded-[3rem] shadow-sm">
+        <Card className="lg:col-span-2 p-10 bg-white border border-zinc-100 rounded-2xl shadow-sm">
           <PremiumChart 
             data={chartData}
             title="Ringkasan Aktivitas Terpadu Sistem"
@@ -138,7 +138,7 @@ export default function PortalIntegrasiPage() {
 
         {/* Secondary analytics metrics & shortcuts */}
         <div className="space-y-8">
-          <Card className="p-8 bg-white border border-zinc-100 rounded-[3rem] shadow-sm space-y-6">
+          <Card className="p-8 bg-white border border-zinc-100 rounded-2xl shadow-sm space-y-6">
             <h3 className="font-black italic uppercase text-sm tracking-widest text-primary flex items-center gap-2"><Activity className="w-5 h-5 animate-pulse" /> Realisasi & Audit</h3>
             
             <div className="space-y-4 text-xs font-bold">
@@ -159,7 +159,7 @@ export default function PortalIntegrasiPage() {
             </div>
           </Card>
 
-          <Card className="p-8 bg-zinc-950 border border-zinc-900 rounded-[3rem] shadow-sm text-white flex flex-col justify-between h-56 relative overflow-hidden group">
+          <Card className="p-8 bg-zinc-950 border border-zinc-900 rounded-2xl shadow-sm text-white flex flex-col justify-between h-56 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
             <div className="space-y-2 relative z-10 text-left">
               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary italic">Live System Monitor</span>

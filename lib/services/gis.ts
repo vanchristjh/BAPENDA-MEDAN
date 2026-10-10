@@ -8,20 +8,29 @@ export class GISService {
           lat: { not: null },
           lng: { not: null },
         },
-        include: {
+        select: {
+          id: true,
+          nop: true,
+          name: true,
+          address: true,
+          lat: true,
+          lng: true,
+          status: true,
           payments: {
+            select: { status: true },
             orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
+        take: 2000,
       });
 
       return {
         success: true,
-        data: (taxObjects as any[]).map((obj) => {
+        data: taxObjects.map((obj) => {
           const lastPayment = obj.payments[0];
           const isCompliant = lastPayment?.status === "PAID";
-          
+
           return {
             id: obj.id,
             nop: obj.nop,
@@ -30,7 +39,6 @@ export class GISService {
             lat: obj.lat,
             lng: obj.lng,
             isCompliant,
-            amount: lastPayment?.amount || 0,
             status: obj.status,
           };
         }),

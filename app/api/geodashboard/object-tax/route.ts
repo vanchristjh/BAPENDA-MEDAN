@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -14,13 +14,15 @@ export async function GET(req: NextRequest) {
     const userId = session.user.id;
 
     // Filter by owner if user is just a taxpayer
-    const whereClause: any = {};
-    if (role === "USER") {
+    const whereClause: Record<string, unknown> = {};
+    if (role === "USER" || role === "MAHASISWA") {
       whereClause.ownerId = userId;
     }
 
     const objects = await prisma.taxObject.findMany({
       where: whereClause,
+      orderBy: { createdAt: "desc" },
+      take: 500,
       include: {
         locations: true,
         payments: {

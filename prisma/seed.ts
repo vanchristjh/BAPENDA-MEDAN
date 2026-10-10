@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type TaxObject, type User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -206,7 +206,7 @@ async function main() {
   const officer3 = await prisma.user.upsert({ where: { email: "petugas3@bapendamedan.go.id" }, update: { name: "Reza Firmansyah (Petugas Verifikasi)", password: officerPw, role: "OFFICER", nik: "1271000000000005", phone: "082112345678", address: "Jl. Diponegoro No. 15, Medan Baru, Kota Medan", isActive: true }, create: { id: "officer-id-3", name: "Reza Firmansyah (Petugas Verifikasi)", email: "petugas3@bapendamedan.go.id", password: officerPw, role: "OFFICER", nik: "1271000000000005", phone: "082112345678", address: "Jl. Diponegoro No. 15, Medan Baru, Kota Medan", isActive: true } });
   await prisma.user.upsert({ where: { email: "dev@bapendamedan.go.id" }, update: { name: "Developer System", password: devPw, role: "DEVELOPER", nik: "1271000000000006", phone: "08100000001", address: "Jl. Ring Road No. 99, Medan Sunggal", isActive: true }, create: { id: "dev-id", name: "Developer System", email: "dev@bapendamedan.go.id", password: devPw, role: "DEVELOPER", nik: "1271000000000006", phone: "08100000001", address: "Jl. Ring Road No. 99, Medan Sunggal", isActive: true } });
 
-  const mahasiswaList: any[] = [];
+  const mahasiswaList: User[] = [];
   const mahasiswaData = [
     { id: "mahasiswa-id", name: "Andi Wijaya", email: "mhs@usu.ac.id", university: UNIVERSITIES[0] },
     { id: "mahasiswa-id-2", name: "Sari Dewi Lestari", email: "mhs2@unimed.ac.id", university: UNIVERSITIES[1] },
@@ -236,7 +236,7 @@ async function main() {
   }
 
   console.log("🌱 Generating 250 Objek Pajak...");
-  const taxObjects: any[] = [];
+  const taxObjects: TaxObject[] = [];
   const pinnedObjects = [
     { id: "obj-pbb-1", nop: "12.72.01.001.001.0001", name: "Kantor Pusat CV Maju Jaya", address: "Jl. Kapten Maulana Lubis No. 1, Medan Petisah", type: "PBB-P2", luasTanah: 1200, luasBangun: 800, njop: 4500000000, ownerId: "wp-id-1" },
     { id: "obj-pbb-2", nop: "12.72.01.001.002.0002", name: "Rumah Tinggal Budi Santoso", address: "Jl. Diponegoro No. 5, Medan Petisah", type: "PBB-P2", luasTanah: 300, luasBangun: 150, njop: 950000000, ownerId: "wp-id-1" },
@@ -369,7 +369,7 @@ async function main() {
     "Peran Pajak Daerah dalam Pembiayaan Infrastruktur Kota Medan Pendekatan Desentralisasi",
   ];
   const resStatuses = ["PENDING", "REVIEW", "APPROVED", "REJECTED"];
-  const mhsIds = mahasiswaList.map((m: any) => m.id);
+  const mhsIds = mahasiswaList.map((m: User) => m.id);
   for (let i = 0; i < 20; i++) {
     const status = resStatuses[i % resStatuses.length];
     const isReviewed = status !== "PENDING";
@@ -643,7 +643,7 @@ async function main() {
     "Kenaikan harga pasar tanah akibat pengembangan kawasan perbelanjaan dan pusat bisnis di sekitar objek",
   ];
   const assessors = [officer.id, officer2.id, officer3.id];
-  const verifiedObjs = taxObjects.filter((o: any) => o.status === "VERIFIED").slice(0, 25);
+  const verifiedObjs = taxObjects.filter((o: TaxObject) => o.status === "VERIFIED").slice(0, 25);
   for (let i = 0; i < verifiedObjs.length; i++) {
     const o = verifiedObjs[i];
     const oldVal = Number(o.njop);

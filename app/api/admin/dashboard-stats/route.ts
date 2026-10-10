@@ -6,46 +6,45 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. Total Wajib Pajak (role: USER)
-    const userCount = await prisma.user.count({
-      where: { role: "USER" },
-    });
-
-    // 2. Total Objek Pajak
-    const taxObjectCount = await prisma.taxObject.count();
-
-    // 3. Total SPPT Terbit
-    const spptCount = await prisma.sppt.count();
-
-    // 4. Jumlah Wajib Pajak Aktif
-    const activeWpCount = await prisma.user.count({
-      where: { role: "USER", isActive: true },
-    });
-
-    // Fetch all payments for aggregation
-    const payments = await prisma.payment.findMany({
-      select: {
-        id: true,
-        amount: true,
-        status: true,
-        createdAt: true,
-        taxObject: {
-          select: {
-            type: true,
-            address: true,
+    // Counts + payment totals via DB aggregates (exact even when rows >5k).
+    // Charts (monthly/sector/district) use bounded 5k sample for 1-year window.
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const [userCount, taxObjectCount, spptCount, activeWpCount, paidAgg, tunggakanAgg, paidCountDb, unpaidCountDb, payments] = await Promise.all([
+      prisma.user.count({ where: { role: "USER" } }),
+      prisma.taxObject.count(),
+      prisma.sppt.count(),
+      prisma.user.count({ where: { role: "USER", isActive: true } }),
+      prisma.payment.aggregate({ where: { status: "PAID", createdAt: { gte: yearStart } }, _sum: { amount: true } }),
+      prisma.payment.aggregate({ where: { status: { in: ["PENDING", "EXPIRED"] }, createdAt: { gte: yearStart } }, _sum: { amount: true } }),
+      prisma.payment.count({ where: { status: "PAID", createdAt: { gte: yearStart } } }),
+      prisma.payment.count({ where: { status: { in: ["PENDING", "EXPIRED"] }, createdAt: { gte: yearStart } } }),
+      prisma.payment.findMany({
+        where: { createdAt: { gte: yearStart } },
+        orderBy: { createdAt: "desc" },
+        take: 5000,
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          createdAt: true,
+          taxObject: {
+            select: {
+              type: true,
+              address: true,
+            }
           }
-        }
-      },
-    });
+        },
+      }),
+    ]);
 
-    let totalRevenueSum = 0;
-    let totalTunggakanSum = 0;
-    let paidCount = 0;
-    let unpaidCount = 0;
+    const totalRevenueSum = Number(paidAgg._sum.amount ?? 0);
+    const totalTunggakanSum = Number(tunggakanAgg._sum.amount ?? 0);
+    const paidCount = paidCountDb;
+    const unpaidCount = unpaidCountDb;
 
     const monthlyStats = Array.from({ length: 12 }, (_, i) => ({
       month: i,
@@ -103,26 +102,24 @@ export async function GET() {
       "Lainnya": 0,
     };
 
-    const allObjects = await prisma.taxObject.findMany({
-      select: { type: true }
-    });
-    allObjects.forEach(obj => {
-      const type = obj.type || "PBB-P2";
+    // Category distribution counts via DB groupBy (was full-table findMany scan)
+    const typeGroups = await prisma.taxObject.groupBy({ by: ["type"], _count: { type: true } });
+    typeGroups.forEach((g) => {
+      const type = g.type || "PBB-P2";
       if (type in objCategoryCounts) {
-        objCategoryCounts[type]++;
+        objCategoryCounts[type] += g._count.type;
       } else {
-        objCategoryCounts["Lainnya"]++;
+        objCategoryCounts["Lainnya"] += g._count.type;
       }
     });
 
+    // Charts only — totals/counts already exact from DB aggregates above.
     payments.forEach((pay) => {
       const date = new Date(pay.createdAt);
       const month = date.getMonth();
       const amt = Number(pay.amount);
       if (pay.status === "PAID") {
         monthlyStats[month].revenue += amt;
-        totalRevenueSum += amt;
-        paidCount++;
 
         // Sector distribution
         const type = pay.taxObject?.type || "PBB-P2";
@@ -132,25 +129,16 @@ export async function GET() {
           sectorRevenueMap["Lainnya"] += amt;
         }
 
-        // District distribution
+        // District distribution (only real address matches; unmatched left unassigned)
         const address = (pay.taxObject?.address || "").toLowerCase();
-        let matched = false;
         for (const dist of Object.keys(districtRevenueMap)) {
           if (address.includes(dist.toLowerCase())) {
             districtRevenueMap[dist] += amt;
-            matched = true;
             break;
           }
         }
-        if (!matched) {
-          const dists = Object.keys(districtRevenueMap);
-          const pseudoIndex = (pay.id ? pay.id.charCodeAt(0) : 0) % dists.length;
-          districtRevenueMap[dists[pseudoIndex]] += amt;
-        }
       } else if (pay.status === "PENDING" || pay.status === "EXPIRED") {
         monthlyStats[month].tunggakan += amt;
-        totalTunggakanSum += amt;
-        unpaidCount++;
       }
     });
 
@@ -185,47 +173,51 @@ export async function GET() {
       };
     });
 
-    // Format district list with ranks
+    // Format district list with ranks (real amounts only; no simulated fallback)
     const districtStats = Object.entries(districtRevenueMap).map(([name, amount]) => ({
       name,
       amount,
-      simulatedAmount: amount > 0 ? amount : (name === "Medan Baru" ? 45200000000 : name === "Medan Petisah" ? 38700000000 : name === "Medan Sunggal" ? 31500000000 : name === "Medan Polonia" ? 28900000000 : name === "Medan Helvetia" ? 22100000000 : name === "Medan Johor" ? 18500000000 : 12400000000)
+      simulatedVal: amount,
     }))
-    .sort((a, b) => b.simulatedAmount - a.simulatedAmount)
+    .sort((a, b) => b.simulatedVal - a.simulatedVal)
     .slice(0, 5)
     .map((d, index) => {
       return {
         name: d.name,
         amount: d.amount,
-        simulatedVal: d.simulatedAmount,
+        simulatedVal: d.simulatedVal,
         pct: 100 - (index * 12)
       };
     });
 
-    // 6. Recent Submissions (Dokumentasi Pengajuan)
-    const research = await prisma.researchRequest.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    });
-
-    const ppid = await prisma.pPIDRequest.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    });
-
-    const complaints = await prisma.complaint.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    });
-
-    const taxSubmissions = await prisma.taxSubmission.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    });
+    // 6. Recent Submissions (batched — was 4 sequential round-trips)
+    const [research, ppid, complaints, taxSubmissions, recentActivity] = await Promise.all([
+      prisma.researchRequest.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      }),
+      prisma.pPIDRequest.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      }),
+      prisma.complaint.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      }),
+      prisma.taxSubmission.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      }),
+      prisma.auditLog.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      }),
+    ]);
 
     const submissions = [
       ...research.map((r) => ({
@@ -268,39 +260,28 @@ export async function GET() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 10);
 
-    // 7. Recent Activity (Latest 5 audit logs)
-    const recentActivity = await prisma.auditLog.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    });
+    // 7-8. Counts batched (was 8 sequential round-trips)
+    const [
+      pendingPPID,
+      pendingComplaints,
+      pendingResearch,
+      pendingTaxSubmissions,
+      pendingVerificationObjects,
+      inProgressPPID,
+      inProgressComplaints,
+      inProgressTaxSubmissions,
+    ] = await Promise.all([
+      prisma.pPIDRequest.count({ where: { status: "OPEN" } }),
+      prisma.complaint.count({ where: { status: "OPEN" } }),
+      prisma.researchRequest.count({ where: { status: "PENDING" } }),
+      prisma.taxSubmission.count({ where: { status: "PENDING" } }),
+      prisma.taxObject.count({ where: { status: "PENDING" } }),
+      prisma.pPIDRequest.count({ where: { status: "IN_PROGRESS" } }),
+      prisma.complaint.count({ where: { status: "IN_PROGRESS" } }),
+      prisma.taxSubmission.count({ where: { status: "IN_PROGRESS" } }),
+    ]);
 
-    // 8. Pending counts for dashboards
-    const pendingPPID = await prisma.pPIDRequest.count({
-      where: { status: "OPEN" },
-    });
-
-    const pendingComplaints = await prisma.complaint.count({
-      where: { status: "OPEN" },
-    });
-
-    const pendingResearch = await prisma.researchRequest.count({
-      where: { status: "PENDING" },
-    });
-
-    const pendingTaxSubmissions = await prisma.taxSubmission.count({
-      where: { status: "PENDING" },
-    });
-
-    const pendingVerificationObjects = await prisma.taxObject.count({
-      where: { status: "PENDING" },
-    });
-
-    const inProgressSubmissions = (
-      await prisma.pPIDRequest.count({ where: { status: "IN_PROGRESS" } }) +
-      await prisma.complaint.count({ where: { status: "IN_PROGRESS" } }) +
-      await prisma.taxSubmission.count({ where: { status: "IN_PROGRESS" } })
-    );
+    const inProgressSubmissions = inProgressPPID + inProgressComplaints + inProgressTaxSubmissions;
 
     const fieldTasksToday = pendingVerificationObjects + Math.min(pendingComplaints, 5);
 

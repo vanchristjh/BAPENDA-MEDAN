@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   Building2, MapPin, Plus, Search, 
-  ChevronRight, BadgeCheck, Clock, 
-  Map as MapIcon, Info, Briefcase, ArrowRight, X, Loader2
+  BadgeCheck, Clock, 
+  Info, ArrowRight, X, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -39,7 +39,7 @@ export default function ObjekPajakPage() {
     luasBangun: "",
   });
 
-  const fetchObjects = async () => {
+  const fetchObjects = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/tax/objects");
@@ -51,11 +51,11 @@ export default function ObjekPajakPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchObjects();
-  }, []);
+  }, [fetchObjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

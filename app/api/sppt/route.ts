@@ -3,6 +3,15 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
+import { z } from "zod";
+
+const SpptSchema = z.object({
+  taxObjectId: z.string().min(1).max(100),
+  taxPeriod: z.string().regex(/^\d{4}$/),
+  njop: z.coerce.number().positive().max(1e15),
+  njoptkp: z.coerce.number().nonnegative().max(1e15).optional(),
+  taxObjectVal: z.coerce.number().positive().max(1e15),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +24,7 @@ export async function GET(req: NextRequest) {
     const taxPeriod = searchParams.get("taxPeriod") || undefined;
     const search = searchParams.get("search") || "";
 
-    let whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
 
     // Filter by role
     if (session.user.role === "USER" || session.user.role === "MAHASISWA") {
@@ -38,6 +47,7 @@ export async function GET(req: NextRequest) {
 
     const sppts = await prisma.sppt.findMany({
       where: whereClause,
+      take: 100,
       include: {
         taxObject: {
           select: {
@@ -77,15 +87,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session?.user || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { taxObjectId, taxPeriod, njop, njoptkp, taxObjectVal } = await req.json();
-
-    if (!taxObjectId || !taxPeriod || !njop || !taxObjectVal) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const parsed = SpptSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { taxObjectId, taxPeriod, njop, njoptkp, taxObjectVal } = parsed.data;
 
     // Get Tax Object to verify and retrieve owner
     const taxObject = await prisma.taxObject.findUnique({

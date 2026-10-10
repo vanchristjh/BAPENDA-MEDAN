@@ -29,6 +29,7 @@ export async function GET() {
       where: isAdmin ? {} : { userId: session.user.id },
       include: { user: { select: { name: true, email: true } } },
       orderBy: { createdAt: "desc" },
+      take: 100,
     });
 
     return NextResponse.json({ requests });
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       newValue: { ticketNumber: request.ticketNumber, title: request.title },
     });
 
-    const admins = await prisma.user.findMany({ where: { role: { in: ["ADMIN", "OFFICER"] } }, select: { id: true } });
+    const admins = await prisma.user.findMany({ where: { role: { in: ["ADMIN", "OFFICER"] } }, select: { id: true }, take: 100 });
     for (const admin of admins) {
       await NotificationService.notify({
         userId: admin.id,

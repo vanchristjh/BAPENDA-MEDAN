@@ -5,16 +5,13 @@ import { Session } from "next-auth";
 import {
    Users,
    ShieldCheck,
-   Zap,
    CreditCard,
    Building2,
    Clock,
-   ArrowRight,
    ShieldAlert,
    Loader2,
    Bell,
    BarChart3,
-   TrendingUp,
    FileText,
    Percent,
    CheckCircle2,
@@ -163,7 +160,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20 selection:bg-[#1E40AF]/20 text-left bg-[#F8FAFC]">
 
          {/* ── Dashboard Hero ── */}
-         <section className="relative bg-white border border-zinc-150 rounded-[2rem] p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
+         <section className="relative bg-white border border-zinc-150 rounded-lg p-8 md:p-12 overflow-hidden group shadow-sm flex flex-col justify-center min-h-[160px]">
             <div className="relative z-10 space-y-4">
                <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 bg-[#1E40AF] rounded-full animate-pulse" />
@@ -188,7 +185,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
             {/* Baris Pertama */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                {kpisRow1.map((stat, i) => (
-                  <Card key={i} padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem] relative overflow-hidden">
+                  <Card key={i} padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md relative overflow-hidden">
                      <div className="space-y-1 relative z-10">
                         <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">{stat.label}</p>
                         <h4 className="text-lg font-black tracking-tight text-foreground uppercase truncate max-w-[190px]">{stat.value}</h4>
@@ -204,7 +201,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
             {/* Baris Kedua */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                {kpisRow2.map((stat, i) => (
-                  <Card key={i} padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md rounded-[1.5rem] relative overflow-hidden">
+                  <Card key={i} padding="md" className="bg-white border border-zinc-150 group transition-all flex items-center justify-between shadow-sm hover:shadow-md relative overflow-hidden">
                      <div className="space-y-1 relative z-10">
                         <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">{stat.label}</p>
                         <h4 className="text-lg font-black tracking-tight text-foreground uppercase truncate max-w-[190px]">{stat.value}</h4>
@@ -227,7 +224,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {/* Chart 1: Pembayaran Bulanan */}
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm">
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm">
                   <PremiumChart
                      subtitle="Akumulasi Bulanan 2026"
                      title="Grafik Pembayaran Bulanan"
@@ -236,7 +233,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
                </Card>
 
                {/* Chart 2: Tunggakan Pajak */}
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm">
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm">
                   <PremiumChart
                      subtitle="Piutang Pajak Terhutang"
                      title="Grafik Tunggakan Pajak"
@@ -245,7 +242,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
                </Card>
 
                {/* Chart 3: Kepatuhan */}
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm">
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm">
                   <PremiumChart
                      subtitle="Lunas vs Tunggakan Ketetapan"
                      title="Grafik Kepatuhan Pajak"
@@ -254,7 +251,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
                </Card>
 
                {/* Chart 4: Objek Pajak per Kecamatan */}
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm">
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm">
                   <PremiumChart
                      subtitle="Distribusi Pajak Wilayah"
                      title="Grafik Objek Pajak per Kecamatan"
@@ -268,7 +265,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
          <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Side: Recent Submissions */}
             <div className="lg:col-span-8 space-y-6">
-               <Card padding="none" className="bg-white border border-zinc-150 rounded-[1.5rem] overflow-hidden shadow-sm">
+               <Card padding="none" className="bg-white border border-zinc-150 overflow-hidden shadow-sm">
                   <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
                      <h3 className="text-base font-black uppercase text-zinc-800">Daftar Pengajuan Layanan Terbaru</h3>
                      <Link href="/dashboard/admin/submissions">
@@ -323,7 +320,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
 
             {/* Right Side: Notifications Panel */}
             <div className="lg:col-span-4">
-               <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm space-y-6">
+               <Card padding="md" className="bg-white border border-zinc-150 shadow-sm space-y-6">
                   <div className="flex items-center gap-3 text-[#1E40AF] border-b border-zinc-100 pb-3">
                      <Bell className="w-5 h-5" />
                      <h3 className="text-base font-black uppercase text-zinc-800">Notifikasi Dashboard</h3>
@@ -384,7 +381,7 @@ export const AdminDashboard = ({ session }: { session: Session }) => {
                <h2 className="text-lg font-black italic tracking-tighter uppercase text-zinc-800">Aktivitas Sistem Terbaru</h2>
             </div>
 
-            <Card padding="md" className="bg-white border border-zinc-150 rounded-[1.5rem] shadow-sm p-6 md:p-10 relative">
+            <Card padding="md" className="bg-white border border-zinc-150 shadow-sm p-6 md:p-10 relative">
                <div className="space-y-6 relative border-l border-zinc-100 pl-6 ml-3">
                   {data?.recentActivity && data.recentActivity.length > 0 ? (
                      data.recentActivity.map((log) => {

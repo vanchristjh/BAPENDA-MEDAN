@@ -49,7 +49,7 @@ export function QuickActionGrid() {
         <Link 
           key={action.title} 
           href={action.href}
-          className="group relative bg-white p-10 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 overflow-hidden flex flex-col justify-between h-[320px]"
+          className="group relative bg-white p-10 rounded-xl border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 overflow-hidden flex flex-col justify-between h-[320px]"
         >
           {/* Background Gradient Glow */}
           <div className={cn("absolute -right-8 -top-8 w-32 h-32 rounded-full blur-[60px] opacity-0 group-hover:opacity-20 transition-opacity duration-1000", action.color)} />

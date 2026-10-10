@@ -3,6 +3,15 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
+import { z } from "zod";
+
+const SpptPatchSchema = z.object({
+  isDownloaded: z.boolean().optional(),
+  njop: z.coerce.number().nonnegative().max(1e15).optional(),
+  njoptkp: z.coerce.number().nonnegative().max(1e15).optional(),
+  taxObjectVal: z.coerce.number().nonnegative().max(1e15).optional(),
+  taxPeriod: z.string().regex(/^\d{4}$/).optional(),
+});
 
 export async function GET(
   req: NextRequest,
@@ -47,7 +56,7 @@ export async function GET(
     }
 
     // Authorization: User can only see their own SPPT
-    if (session.user.role === "USER" && sppt.userId !== session.user.id) {
+    if (["USER", "MAHASISWA"].includes(session.user.role) && sppt.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -69,7 +78,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { isDownloaded, njop, njoptkp, taxObjectVal, taxPeriod } = await req.json();
+    const parsed = SpptPatchSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { isDownloaded, njop, njoptkp, taxObjectVal, taxPeriod } = parsed.data;
 
     const sppt = await prisma.sppt.findUnique({
       where: { id },
@@ -80,7 +93,7 @@ export async function PATCH(
     }
 
     // If regular user, they can only update isDownloaded
-    if (session.user.role === "USER") {
+    if (["USER", "MAHASISWA"].includes(session.user.role)) {
       if (sppt.userId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -93,17 +106,17 @@ export async function PATCH(
     }
 
     // Officer/Admin can update other fields
-    if (!["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const oldData = { ...sppt };
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (isDownloaded !== undefined) updateData.isDownloaded = isDownloaded;
-    if (njop !== undefined) updateData.njop = Number(njop);
-    if (njoptkp !== undefined) updateData.njoptkp = Number(njoptkp);
-    if (taxObjectVal !== undefined) updateData.taxObjectVal = Number(taxObjectVal);
+    if (njop !== undefined) updateData.njop = njop;
+    if (njoptkp !== undefined) updateData.njoptkp = njoptkp;
+    if (taxObjectVal !== undefined) updateData.taxObjectVal = taxObjectVal;
     if (taxPeriod !== undefined) updateData.taxPeriod = taxPeriod;
 
     const updated = await prisma.sppt.update({
@@ -135,7 +148,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session?.user || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session?.user || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -4,19 +4,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { AuditService } from "@/lib/services/audit";
 import { NotificationService } from "@/lib/services/notification";
+import { z } from "zod";
+
+const SurveySchema = z.object({
+  taxObjectId: z.string().min(1).max(100),
+  status: z.enum(["PENDING", "VERIFIED", "REJECTED", "ACTIVE"]).optional(),
+  latitude: z.coerce.number().min(-90).max(90).optional(),
+  longitude: z.coerce.number().min(-180).max(180).optional(),
+  image: z.string().max(500).optional(),
+  note: z.string().max(1000).optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !["ADMIN", "OFFICER"].includes(session.user.role)) {
+    if (!session || !["ADMIN", "OFFICER", "DEVELOPER"].includes(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taxObjectId, status, latitude, longitude, image, note } = await req.json();
-
-    if (!taxObjectId) {
-      return NextResponse.json({ error: "taxObjectId wajib diisi" }, { status: 400 });
+    const parsed = SurveySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validasi gagal", details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { taxObjectId, status, latitude, longitude, image, note } = parsed.data;
 
     const taxObject = await prisma.taxObject.findUnique({
       where: { id: taxObjectId },
@@ -31,16 +41,16 @@ export async function POST(req: NextRequest) {
       where: { id: taxObjectId },
       data: {
         status: status || taxObject.status,
-        lat: latitude !== undefined ? parseFloat(latitude) : taxObject.lat,
-        lng: longitude !== undefined ? parseFloat(longitude) : taxObject.lng,
+        lat: latitude ?? taxObject.lat,
+        lng: longitude ?? taxObject.lng,
       },
     });
 
     // Handle ObjectTaxLocation polygon updates or positioning
     let updatedLocation = null;
     if (latitude !== undefined && longitude !== undefined) {
-      const latVal = parseFloat(latitude);
-      const lngVal = parseFloat(longitude);
+      const latVal = latitude;
+      const lngVal = longitude;
       const offset = 0.00015;
       const polygon = [
         [latVal - offset, lngVal - offset],

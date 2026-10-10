@@ -16,8 +16,8 @@ export class AuditService {
     action: string;
     table: string;
     recordId: string;
-    oldValue?: any;
-    newValue?: any;
+    oldValue?: unknown;
+    newValue?: unknown;
   }) {
     try {
       return await prisma.auditLog.create({
@@ -58,7 +58,13 @@ export class AuditService {
     limit?: number;
     offset?: number;
   } = {}) {
-    const where: any = {};
+    const where: {
+      userId?: string;
+      table?: string;
+      action?: string;
+      recordId?: string;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = {};
     if (userId) where.userId = userId;
     if (table) where.table = table;
     if (action) where.action = action;

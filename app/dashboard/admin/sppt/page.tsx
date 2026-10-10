@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { 
-  FileText, Download, Eye, Search, Loader2, Plus, Trash2,
-  Building2, Calendar, CreditCard, ChevronRight, X, AlertTriangle, Filter, CheckCircle2
+  FileText, Download, Search, Loader2, Plus, Trash2,
+  ChevronRight, X, AlertTriangle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,9 +15,9 @@ interface Sppt {
   id: string;
   spptNumber: string;
   taxPeriod: string;
-  njop: any;
-  njoptkp: any;
-  taxObjectVal: any;
+  njop: number | string;
+  njoptkp: number | string;
+  taxObjectVal: number | string;
   isDownloaded: boolean;
   createdAt: string;
   taxObject: {
@@ -42,8 +42,8 @@ interface TaxObject {
   nop: string;
   name: string;
   address: string;
-  njop: any;
-  njoptkp: any;
+  njop: number | string;
+  njoptkp: number | string;
   owner: {
     id: string;
     name: string | null;
@@ -78,11 +78,6 @@ export default function AdminSpptPage() {
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pdfGeneratingId, setPdfGeneratingId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleDownloadPDF = async (sppt: Sppt) => {
     setPdfGeneratingId(sppt.id);
@@ -90,7 +85,7 @@ export default function AdminSpptPage() {
       const { pdf } = await import("@react-pdf/renderer");
       const { DigitalSpptDocument } = await import("@/components/sppt/DigitalSppt");
       
-      const blob = await pdf(<DigitalSpptDocument data={sppt as any} />).toBlob();
+      const blob = await pdf(<DigitalSpptDocument data={sppt} />).toBlob();
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement("a");
@@ -195,8 +190,8 @@ export default function AdminSpptPage() {
       setIsIssueOpen(false);
       setSelectedTaxObject(null);
       fetchData();
-    } catch (err: any) {
-      toast("Error", err.message || "Gagal menerbitkan SPPT.", "error");
+    } catch (err: unknown) {
+      toast("Error", err instanceof Error ? err.message : "Gagal menerbitkan SPPT.", "error");
     } finally {
       setIssueLoading(false);
     }

@@ -34,6 +34,11 @@ interface NewsItem {
   slug: string;
 }
 
+interface NopCheckResult {
+  objectInfo: { nop: string; name: string; address: string };
+  pendingAmount: number;
+}
+
 export default function Home() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -44,7 +49,7 @@ export default function Home() {
   
   const [nopQuery, setNopQuery] = useState("");
   const [checkingNop, setCheckingNop] = useState(false);
-  const [nopResult, setNopResult] = useState<any>(null);
+  const [nopResult, setNopResult] = useState<NopCheckResult | null>(null);
 
   useEffect(() => {
     fetch(window.location.origin + "/api/cms/news")

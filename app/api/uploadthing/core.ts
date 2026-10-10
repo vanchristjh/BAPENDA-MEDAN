@@ -9,7 +9,7 @@ export const ourFileRouter = {
   newsImage: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== "ADMIN") throw new Error("Unauthorized");
+      if (!session || !["ADMIN", "DEVELOPER"].includes(session.user.role)) throw new Error("Unauthorized");
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }: { metadata: { userId: string }; file: { url: string } }) => {
